@@ -1,0 +1,12 @@
+------------------------------------------------------------------------------
+README
+------------------------------------------------------------------------------
+
+This example implements a USB combo device, with a USB TMC, and USB CDC-ACM
+device.
+ 
+The CDC-ACM interface is connected to USART2 (PA2/PA3) as in other examples, 
+and the USBTMC interface allows some very very rudimentary control of the DAC
+as a signal generator.
+ 
+This example is heavily based on the existing usb_to_serial_rs485 demo
