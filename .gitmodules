@@ -4,3 +4,6 @@
 [submodule "python-usbtmc"]
 	path = python-usbtmc
 	url = git@github.com:karlp/python-usbtmc.git
+[submodule "scpi-parser"]
+	path = scpi-parser
+	url = git@github.com:karlp/scpi-parser.git
