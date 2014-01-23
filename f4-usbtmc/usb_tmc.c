@@ -154,6 +154,17 @@ int tmc_control_request(usbd_device *usbd_dev,
 	(void) usbd_dev;
 
 	switch (req->bRequest) {
+		
+	case USB_REQ_CLEAR_FEATURE:
+		if (req->wIndex != 0) {
+			if (req->wValue == USB_ENDPOINT_HALT) {
+				// USBTMC says we're meant to do some _extra_ handling of state here?
+				// but let the existing code handle the stall stuff
+				return USBD_REQ_NEXT_CALLBACK;
+			}
+		}
+		//
+
 	case USB_TMC_REQ_GET_CAPABILITIES:
 		memcpy(*buf, &capabilities, sizeof(capabilities));
 		return USBD_REQ_HANDLED;
