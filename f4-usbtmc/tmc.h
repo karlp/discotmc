@@ -54,6 +54,63 @@ extern "C" {
 #define USB_TMC_INTERFACE_CAPABILITY_LISTEN_ONLY	(1<<0)
 #define USB_TMC_DEVICE_CAPABILITY_TERMCHAR		(1<<0)
 
+	struct usb_tmc_bulk_header {
+		uint8_t MsgID;
+		uint8_t bTag;
+		uint8_t bTagInverse;
+		uint8_t reserved;
+
+		union {
+
+			struct _dev_dep_msg_out {
+				uint32_t transferSize;
+				uint8_t bmTransferAttributes;
+				uint8_t reserved[3];
+			} dev_dep_msg_out;
+
+			struct _req_dev_dep_msg_in {
+				uint32_t transferSize;
+				uint8_t bmTransferAttributes;
+				uint8_t TermChar;
+				uint8_t reserved[2];
+			} req_dev_dep_msg_in;
+
+			struct _dev_dep_msg_in {
+				uint32_t transferSize;
+				uint8_t bmTransferAttributes;
+				uint8_t reserved[3];
+			} dev_dep_msg_in;
+
+			struct _vendor_specific_out {
+				uint32_t transferSize;
+				uint8_t reserved[4];
+			} vendor_specific_out;
+
+			struct _req_vendor_specific_in {
+				uint32_t transferSize;
+				uint8_t reserved[4];
+			} req_vendor_specific_in;
+
+			struct _vendor_specific_in {
+				uint32_t transferSize;
+				uint8_t reserved[4];
+			} vendor_specific_in;
+			uint8_t raw[8];
+		} command_specific;
+
+	} __attribute__((packed));
+
+	/* Table 2, MsgId values */
+#define USB_TMC_MSGID_OUT_DEV_DEP_MSG_OUT		1
+#define USB_TMC_MSGID_OUT_REQUEST_DEV_DEP_MSG_IN	2
+#define USB_TMC_MSGID_IN_DEV_DEP_MSG_IN			2
+	/* Reserved for USBTMC */
+#define USB_TMC_MSGID_OUT_VENDOR_SPECIFIC_OUT		126
+#define USB_TMC_MSGID_OUT_REQUEST_VENDOR_SPECIFIC_IN	127
+#define USB_TMC_MSGID_IN_VENDOR_SPECIFIC_IN		127
+	/* Reserved for USBTMC subclass and VISA */
+
+
 #ifdef	__cplusplus
 }
 #endif
