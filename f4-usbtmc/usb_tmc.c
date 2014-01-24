@@ -1,4 +1,5 @@
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <libopencm3/usb/usbstd.h>
 
@@ -127,8 +128,13 @@ void usb_tmc_setup_post_arch(void)
  * recommended is on for > 500ms and < 1 sec.
  * We're hacking it a bit now with just a toggle each time you ask for it
  */
-void usb_tmc_arch_handle_pulse(void) {
+static void usb_tmc_arch_handle_pulse(void) {
 	gpio_toggle(LED_PULSE_PORT, LED_PULSE_PIN);
+}
+
+void otg_fs_isr(void)
+{
+	usbd_poll(tmc_dev);
 }
 
 /**
@@ -150,16 +156,17 @@ int tmc_control_request(usbd_device *usbd_dev,
 {
 
 	(void) complete;
-	(void) buf;
 	(void) usbd_dev;
+	(void) len;
 
 	switch (req->bRequest) {
 		
 	case USB_REQ_CLEAR_FEATURE:
 		if (req->wIndex != 0) {
-			if (req->wValue == USB_ENDPOINT_HALT) {
+			if (req->wValue == USB_FEAT_ENDPOINT_HALT) {
 				// USBTMC says we're meant to do some _extra_ handling of state here?
 				// but let the existing code handle the stall stuff
+				printf("clear_feature:endpointhalt\n");
 				return USBD_REQ_NEXT_CALLBACK;
 			}
 		}

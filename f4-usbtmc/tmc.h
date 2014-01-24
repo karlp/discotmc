@@ -39,7 +39,7 @@ extern "C" {
 #define USB_TMC_REQ_CHECK_CLEAR_STATUS			6
 #define USB_TMC_REQ_GET_CAPABILITIES			7
 #define USB_TMC_REQ_INDICATOR_PULSE			64 /* optional */
-	 
+
 
 	/* USB TMC status values Table 16 */
 #define USB_TMC_STATUS_SUCCESS				1
