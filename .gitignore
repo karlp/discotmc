@@ -8,3 +8,6 @@
 *.list
 *.map
 *.stylecheck
+
+# python virtualenvs
+.env
