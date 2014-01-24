@@ -185,10 +185,19 @@ int tmc_control_request(usbd_device *usbd_dev,
 static void tmc_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
 {
 	uint8_t buf[64];
+	int i;
 
 	(void) ep;
 
 	int len = usbd_ep_read_packet(usbd_dev, 0x01, buf, 64);
+	for (i = 0; i < len; i++) {
+		printf("%x", buf[i]);
+		if ((i + 1) % 16 == 0) {
+			putchar('\n');
+		} else {
+			putchar(' ');
+		}
+	}
 	//glue_send_data_cb(buf, len);
 }
 
