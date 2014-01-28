@@ -6,6 +6,7 @@
 #include "usb_tmc.h"
 
 size_t myWrite(scpi_t * context, const char * data, size_t len);
+scpi_result_t my_reset_handler(scpi_t *context);
 
 scpi_command_t scpi_commands[] = {
     { .pattern = "*IDN?", .callback = SCPI_CoreIdnQ,},
@@ -17,7 +18,7 @@ scpi_command_t scpi_commands[] = {
 scpi_interface_t scpi_interface = {
     .write = myWrite,
     .error = NULL,
-    .reset = NULL,
+    .reset = my_reset_handler,
     .test = NULL,
     .control = NULL,
 };
@@ -74,3 +75,7 @@ size_t myWrite(scpi_t *context, const char *data, size_t len) {
 	return len;
 }
 
+scpi_result_t my_reset_handler(scpi_t *context) {
+	printf("Result handler got called!");
+	return SCPI_RES_OK;
+}
