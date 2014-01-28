@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <libopencm3/usb/usbstd.h>
 
 #include <libopencm3/cm3/nvic.h>
@@ -12,9 +13,12 @@
 #include "syscfg.h"
 #include "tmc.h"
 #include "usb_tmc.h"
+#include "scpi-arch.h"
 
 /* Buffer to be used for control requests. */
 uint8_t usbd_control_buffer[128];
+uint8_t output_buffer[256];
+int output_buffer_idx = 0;
 usbd_device *tmc_dev;
 
 static const struct usb_device_descriptor dev = {
@@ -185,20 +189,56 @@ int tmc_control_request(usbd_device *usbd_dev,
 static void tmc_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
 {
 	uint8_t buf[64];
-	int i;
-
 	(void) ep;
 
 	int len = usbd_ep_read_packet(usbd_dev, 0x01, buf, 64);
-	for (i = 0; i < len; i++) {
-		printf("%x", buf[i]);
-		if ((i + 1) % 16 == 0) {
-			putchar('\n');
-		} else {
-			putchar(' ');
+	/* TODO We actually need a state machine to handle >= than single transfer*/
+	struct usb_tmc_bulk_header *bhin = (struct usb_tmc_bulk_header *)buf;
+	switch (bhin->MsgID) {
+	case USB_TMC_MSGID_OUT_DEV_DEP_MSG_OUT:
+		printf("dev dep out btag: %d\n", bhin->bTag);
+		/* umm, what? should just drop the packet I guess?*/
+#if 0
+		if (bhin->bTag != ~(bhin->bTagInverse)) {
+			printf("ignoring invalid: bTag != bTagInverse?!!");
+			return;
 		}
+#endif
+		/* Could also assert that reserved is zero, but let's forgive things */
+		if (bhin->command_specific.dev_dep_msg_out.transferSize > 64) {
+			printf("transfer > 1 packet! (UNHANDLED)\n");
+			return;
+		}
+		if (bhin->command_specific.dev_dep_msg_out.bmTransferAttributes & USB_TMC_BULK_HEADER_BMTRANSFER_ATTRIB_EOM) {
+			/* exit state machine here */
+			printf("single frame packet :)\n");
+		}
+		scpi_glue_input(&buf[sizeof(struct usb_tmc_bulk_header)],
+			bhin->command_specific.dev_dep_msg_out.transferSize,
+			true);
+	case USB_TMC_MSGID_OUT_REQUEST_DEV_DEP_MSG_IN:
+		/* WILL need state machiens here too I guess :( */
+		printf("req_devdepin for max %" PRIu32 " bytes\n", bhin->command_specific.req_dev_dep_msg_in.transferSize);
+		if (bhin->command_specific.req_dev_dep_msg_in.bmTransferAttributes & USB_TMC_BULK_HEADER_BMTRANSFER_ATTRIB_TERMCHAR) {
+			printf("FAIL! requested term char!\n");
+			return;  /* TODO reply error? */
+		}
+		bhin->MsgID = USB_TMC_MSGID_IN_DEV_DEP_MSG_IN;
+		bhin->command_specific.dev_dep_msg_in.transferSize = output_buffer_idx;
+		/* only support short stuff now! */
+		bhin->command_specific.dev_dep_msg_in.bmTransferAttributes = USB_TMC_BULK_HEADER_BMTRANSFER_ATTRIB_EOM;
+		memcpy(&buf[sizeof(struct usb_tmc_bulk_header) + 1], output_buffer, output_buffer_idx);
+		usbd_ep_write_packet(tmc_dev, 0x82, buf, sizeof(struct usb_tmc_bulk_header) + output_buffer_idx);
+		output_buffer_idx = 0;
+		return;
+	case USB_TMC_MSGID_OUT_VENDOR_SPECIFIC_OUT:
+		printf("vendor_out (UNHANDLED)\n");
+		return;
+	case USB_TMC_MSGID_OUT_REQUEST_VENDOR_SPECIFIC_IN:
+		printf("req_vendor_in (UNHANDLED)\n");
+		return;
 	}
-	//glue_send_data_cb(buf, len);
+	
 }
 
 static void tmc_set_config(usbd_device *usbd_dev, uint16_t wValue)
@@ -215,6 +255,14 @@ static void tmc_set_config(usbd_device *usbd_dev, uint16_t wValue)
 		USB_REQ_TYPE_TYPE |
 		USB_REQ_TYPE_RECIPIENT,
 		tmc_control_request);
+}
+
+void tmc_glue_send_data(uint8_t *buf, size_t len) {
+	memcpy(&output_buffer[output_buffer_idx], buf, len);
+	if (output_buffer_idx + len > sizeof(output_buffer)) {
+		printf("OOPS output buffer overflow!\n");
+	}
+	output_buffer_idx += len;
 }
 
 void usb_tmc_init(usbd_device **usbd_dev)

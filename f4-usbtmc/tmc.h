@@ -104,12 +104,15 @@ extern "C" {
 #define USB_TMC_MSGID_OUT_DEV_DEP_MSG_OUT		1
 #define USB_TMC_MSGID_OUT_REQUEST_DEV_DEP_MSG_IN	2
 #define USB_TMC_MSGID_IN_DEV_DEP_MSG_IN			2
-	/* Reserved for USBTMC */
+	/* 3-125 Reserved for USBTMC */
 #define USB_TMC_MSGID_OUT_VENDOR_SPECIFIC_OUT		126
 #define USB_TMC_MSGID_OUT_REQUEST_VENDOR_SPECIFIC_IN	127
 #define USB_TMC_MSGID_IN_VENDOR_SPECIFIC_IN		127
-	/* Reserved for USBTMC subclass and VISA */
+	/* 128-255 Reserved for USBTMC subclass and VISA */
 
+	/* long lines are gross, but consistent naming wins? */
+#define USB_TMC_BULK_HEADER_BMTRANSFER_ATTRIB_EOM	(1<<0)
+#define USB_TMC_BULK_HEADER_BMTRANSFER_ATTRIB_TERMCHAR	(1<<1)
 
 #ifdef	__cplusplus
 }
