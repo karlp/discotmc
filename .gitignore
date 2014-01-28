@@ -11,3 +11,5 @@
 
 # python virtualenvs
 .env
+/disco-host-tests/build/
+/disco-host-tests/dist/
