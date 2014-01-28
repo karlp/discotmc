@@ -76,6 +76,7 @@ size_t myWrite(scpi_t *context, const char *data, size_t len) {
 }
 
 scpi_result_t my_reset_handler(scpi_t *context) {
-	printf("Result handler got called!");
+	/* TODO could do a full system reset here? */
+	printf("Result handler got called!\n");
 	return SCPI_RES_OK;
 }
