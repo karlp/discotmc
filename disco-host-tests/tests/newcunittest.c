@@ -38,23 +38,51 @@ void testScpi_glue_input()
 	}
 }
 
-void testoutput1Q() {
-	uint8_t *ibuf = "OUTP? 11";
-	scpi_glue_input(ibuf, sizeof(ibuf), true, obuf);
+void testoutput_explicit() {
+	uint8_t *ibuf = "OUTP1?";
+	scpi_glue_input(ibuf, strlen(ibuf), true, obuf);
 	printf(obuf);
 	CU_ASSERT(1);
 }
 
-void test_output_both_off() {
-	uint8_t *ibuf = "outp off";
-	scpi_glue_input(ibuf, sizeof(ibuf), true, obuf);
+void testoutput_upwards() {
+	uint8_t *ibuf = "OUTP?";
+	scpi_glue_input(ibuf, strlen(ibuf), true, obuf);
 	printf(obuf);
 	CU_ASSERT(1);
 }
 
-void test_output_single_off() {
+void test_output_war_load1() {
+	uint8_t *ibuf = "OUTP:LOAD?";
+	scpi_glue_input(ibuf, strlen(ibuf), true, obuf);
+	printf(obuf);
+	CU_ASSERT(1);
+}
+
+void test_output_load2() {
+	uint8_t *ibuf = "outp2:load?";
+	scpi_glue_input(ibuf, strlen(ibuf), true, obuf);
+	printf(obuf);
+	CU_ASSERT(1);
+}
+
+void test_bjarni1() {
 	uint8_t *ibuf = "outp2 off";
-	scpi_glue_input(ibuf, sizeof(ibuf), true, obuf);
+	scpi_glue_input(ibuf, strlen(ibuf), true, obuf);
+	printf(obuf);
+	CU_ASSERT(1);
+}
+
+void test_bjarni2() {
+	uint8_t *ibuf = "outp1:load inf";
+	scpi_glue_input(ibuf, strlen(ibuf), true, obuf);
+	printf(obuf);
+	CU_ASSERT(1);
+}
+
+void test_bjarni3() {
+	uint8_t *ibuf = "sour1:appl:sin 50Hz,0.465Vrms,0";
+	scpi_glue_input(ibuf, strlen(ibuf), true, obuf);
 	printf(obuf);
 	CU_ASSERT(1);
 }
@@ -77,9 +105,13 @@ int main()
 	/* Add the tests to the suite */
 	if (0 ||
 		(NULL == CU_add_test(pSuite, "testScpi_glue_input", testScpi_glue_input)) ||
-		(NULL == CU_add_test(pSuite, "outp1?", testoutput1Q)) ||
-//		(NULL == CU_add_test(pSuite, "testoutpu2_off", test_output_both_off)) ||
-//		(NULL == CU_add_test(pSuite, "single off", test_output_single_off)) ||
+		(NULL == CU_add_test(pSuite, "testoutput_explicit", testoutput_explicit)) ||
+		(NULL == CU_add_test(pSuite, "testoutput_upwards", testoutput_upwards)) ||
+		(NULL == CU_add_test(pSuite, "test_output_load2", test_output_load2)) ||
+		(NULL == CU_add_test(pSuite, "test_WAR_load1", test_output_war_load1)) ||
+		(NULL == CU_add_test(pSuite, "test_bjarni1", test_bjarni1)) ||
+		(NULL == CU_add_test(pSuite, "test_bjarni2", test_bjarni2)) ||
+		(NULL == CU_add_test(pSuite, "test_bjarni3", test_bjarni3)) ||
 		0) {
 		CU_cleanup_registry();
 		return CU_get_error();

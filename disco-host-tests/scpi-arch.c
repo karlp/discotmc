@@ -12,9 +12,35 @@ char *secret_output;
 
 size_t myWrite(scpi_t * context, const char * data, size_t len);
 
+/* From Bjarni 
+ 
+ * This is basically what I am sending
+
+outp2 off				// make sure that output 2 is of (just because it should not be, I am only using output 1)
+outp1:load inf				//set the output resistanse to none (not 50ohm)
+sour1:appl:sin 50Hz,0.465Vrms,0	//set ouput 1 to appropriate signal for mid range value to be used for calibration
+
+ * 
+ */
+
+const char *output_channels[] = {"AA", "BB", NULL};
+const char *functions_gwinstek_afg2225[] = {
+	"SINusoid",  /* freq, amp, offset */
+	"SQUare", /* freq, amp, offset */
+	"RAMP", /* freq, amp, offset.  To use non 50%, need to set explict */
+	"PULSe", /* freq, amp, offset, also need other settings */
+	"NOISe", /* DEF, amp, offset */
+	"USER", 
+	NULL
+};
+
 struct _funcgen_state {
 	bool outputs[2];
-	int load[2];
+	//char *load[2]; // Can be thigns like DEF, MAX; MIN, etc...
+	int load[2]; // Can be thigns like DEF, MAX; MIN, etc...
+	int functions[2];
+	/* for freq, I really want a "SCPI Number" not an int or anything... */
+	char *freq[2];
 };
 
 static struct _funcgen_state fg_state;
@@ -40,35 +66,30 @@ int dscpi_output(scpi_t *context) {
 
 int dscpi_outputQ(scpi_t *context) {
 	int output;
-	bool all_outputs = false;
-	const char *options[] = {"11", "22", NULL};
 	printf("parsing outputQ\n");
-	if (!SCPI_ParamChoice(context, options, &output, false)) {
-		printf("selected both outputs");
-		all_outputs = true;
-	} else {
-		printf("acting on output %d (%s)\n", output, options[output]);
+	if (!SCPI_ParamChoice(context, output_channels, &output, false)) {
+		output = 0;
 	}
-	char loadstr[] = "load";
-	size_t loadstr_len = sizeof(loadstr);
-	if (!SCPI_ParamString(context, (const char**)&loadstr, &loadstr_len, false)) {
-		printf("No load parameter passed\n");
-		if (all_outputs) {
-			SCPI_ResultBool(context, fg_state.outputs[0]);
-			SCPI_ResultBool(context, fg_state.outputs[1]);
-		} else {
-			SCPI_ResultBool(context, fg_state.outputs[output]);
-		}
-	} else {
-		printf("load parameter given, making up a load\n");
-		if (all_outputs) {
-			SCPI_ResultInt(context, fg_state.load[0]);
-			SCPI_ResultInt(context, fg_state.load[1]);
-		} else {
-			SCPI_ResultInt(context, fg_state.load[output]);
-		}		
-	}
+	printf("acting on output %d (%s)\n", output, output_channels[output]);
+	SCPI_ResultBool(context, fg_state.outputs[output]);
 	return SCPI_RES_OK;
+}
+
+int dscpi_output_loadQ(scpi_t *context) {
+	/* TODO Sort out the channel selction again! */
+	int output = 0;
+	printf("load parameter given, presenting saved load\n");
+	//SCPI_ResultString(context, SCPI_NumberToStr()
+	SCPI_ResultInt(context, fg_state.load[output]);
+	return SCPI_RES_OK;
+}
+
+int dscpi_apply(scpi_t *context) {
+	
+}
+
+int dscpi_applyQ(scpi_t *context) {
+	
 }
 
 int dscpi_error(scpi_t * context, int_fast16_t err) {
@@ -90,7 +111,13 @@ scpi_command_t scpi_commands[] = {
     //{ .pattern = "OUTPut1?", .callback= dscpi_outputQ,},
     //{ .pattern = "OUTPut2?", .callback= dscpi_outputQ,},
     { .pattern = "OUTPut?", .callback= dscpi_outputQ,},
+    { .pattern = "OUTPut:LOAD?", .callback= dscpi_output_loadQ,},
+    //{ .pattern = "OUTPut[<n>]:load?", .callback= dscpi_outputQ,},
     //{ .pattern = "OUTPut[2]", .callback= dscpi_output,},
+//    {.pattern = "[SOURce]:APPLy", .callback= dscpi_apply,},
+//    {.pattern = "[SOURce]:APPLy?", .callback= dscpi_applyQ,},
+    {.pattern = ":APPLy", .callback= dscpi_apply,},
+    {.pattern = ":APPLy?", .callback= dscpi_applyQ,},
     SCPI_CMD_LIST_END
 };
 
@@ -147,7 +174,7 @@ void scpi_init(void) {
 	fg_state.outputs[0] = true;
 	fg_state.outputs[1] = false;
 	fg_state.load[0] = 25;
-	fg_state.load[2] = 50;
+	fg_state.load[1] = 50;
 }
 
 void scpi_glue_input(uint8_t *buf, uint16_t len, bool final, char *magic)

@@ -92,7 +92,7 @@ ${TESTDIR}/TestFiles/f1: ${TESTDIR}/tests/newcunittest.o ${OBJECTFILES:%.o=%_nom
 ${TESTDIR}/tests/newcunittest.o: tests/newcunittest.c 
 	${MKDIR} -p ${TESTDIR}/tests
 	${RM} "$@.d"
-	$(COMPILE.c) -g -I../scpi-parser/libscpi/inc -MMD -MP -MF "$@.d" -o ${TESTDIR}/tests/newcunittest.o tests/newcunittest.c
+	$(COMPILE.c) -g -I../scpi-parser/libscpi/inc -I../scpi-parser/libscpi/inc -MMD -MP -MF "$@.d" -o ${TESTDIR}/tests/newcunittest.o tests/newcunittest.c
 
 
 ${OBJECTDIR}/main_nomain.o: ${OBJECTDIR}/main.o main.c 
