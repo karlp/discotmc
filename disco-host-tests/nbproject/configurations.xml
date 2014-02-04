@@ -4,7 +4,6 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
-      <itemPath>scpi-arch.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
                    displayName="Resource Files"
@@ -13,8 +12,6 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
-      <itemPath>main.c</itemPath>
-      <itemPath>scpi-arch.c</itemPath>
     </logicalFolder>
     <logicalFolder name="TestFiles"
                    displayName="Test Files"
@@ -33,6 +30,7 @@
                    kind="IMPORTANT_FILES_FOLDER">
       <itemPath>Makefile</itemPath>
     </logicalFolder>
+    <itemPath>main.c</itemPath>
   </logicalFolder>
   <sourceRootList>
     <Elem>../scpi-parser/libscpi/src</Elem>
@@ -70,10 +68,6 @@
       </folder>
       <item path="main.c" ex="false" tool="0" flavor2="0">
       </item>
-      <item path="scpi-arch.c" ex="false" tool="0" flavor2="0">
-      </item>
-      <item path="scpi-arch.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="tests/newcunittest.c" ex="false" tool="0" flavor2="0">
       </item>
     </conf>
@@ -106,10 +100,6 @@
         </linkerTool>
       </folder>
       <item path="main.c" ex="false" tool="0" flavor2="0">
-      </item>
-      <item path="scpi-arch.c" ex="false" tool="0" flavor2="0">
-      </item>
-      <item path="scpi-arch.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="tests/newcunittest.c" ex="false" tool="0" flavor2="0">
       </item>
@@ -160,11 +150,7 @@
           </linkerLibItems>
         </linkerTool>
       </folder>
-      <item path="main.c" ex="false" tool="0" flavor2="9">
-      </item>
-      <item path="scpi-arch.c" ex="false" tool="0" flavor2="9">
-      </item>
-      <item path="scpi-arch.h" ex="false" tool="3" flavor2="0">
+      <item path="main.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="tests/newcunittest.c" ex="false" tool="0" flavor2="0">
       </item>
