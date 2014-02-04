@@ -5,12 +5,14 @@
 #include <string.h>
 #include "scpi/scpi.h"
 
+#if 0
+
 #define SCPI_INPUT_BUFFER_LENGTH 256
 static char scpi_input_buffer[SCPI_INPUT_BUFFER_LENGTH];
 
 char *secret_output;
 
-size_t myWrite(scpi_t * context, const char * data, size_t len);
+size_t scpi_impl_write(scpi_t * context, const char * data, size_t len);
 
 /* From Bjarni 
  
@@ -44,34 +46,36 @@ struct _funcgen_state {
 };
 
 static struct _funcgen_state fg_state;
-
-int dscpi_output(scpi_t *context) {
-	int output;
+#if 0
+static int dscpi_output_inner(scpi_t *context, int output) {
 	printf("attempting to parse an OUTP[1|2] command\n");
-	bool all_outputs = false;
-	// TODO use a CHOICE
-	if (!SCPI_ParamInt(context, &output, false)) {
-		printf("acting on both outputs\n");
-		all_outputs = true;
-	} else {
-		printf("acting on output %d\n", output);
-	}
 	bool action;
 	if (!SCPI_ParamBool(context, &action, true)) {
 		return SCPI_RES_ERR;
 	}
-	printf("turning output %s", action ? "on" : "off");
-	
+	printf("turning output %d %s", output + 1, action ? "on" : "off");
+	return SCPI_RES_OK;
 }
 
-int dscpi_outputQ(scpi_t *context) {
-	int output;
-	printf("parsing outputQ\n");
-	if (!SCPI_ParamChoice(context, output_channels, &output, false)) {
-		output = 0;
-	}
-	printf("acting on output %d (%s)\n", output, output_channels[output]);
-	SCPI_ResultBool(context, fg_state.outputs[output]);
+int dscpi_output1(scpi_t *context) {
+	printf("Setting output 1\n");
+	return dscpi_output_inner(context, 0);
+}
+
+int dscpi_output2(scpi_t *context) {
+	printf("Setting output 2\n");
+	return dscpi_output_inner(context, 1);
+}
+
+int dscpi_output1Q(scpi_t *context) {
+	printf("parsing output_1_Q\n");
+	SCPI_ResultBool(context, fg_state.outputs[0]);
+	return SCPI_RES_OK;
+}
+
+int dscpi_output2Q(scpi_t *context) {
+	printf("parsing output_2_Q\n");
+	SCPI_ResultBool(context, fg_state.outputs[1]);
 	return SCPI_RES_OK;
 }
 
@@ -91,8 +95,8 @@ int dscpi_apply(scpi_t *context) {
 int dscpi_applyQ(scpi_t *context) {
 	
 }
-
-int dscpi_error(scpi_t * context, int_fast16_t err) {
+#endif
+int scpi_impl_error(scpi_t * context, int_fast16_t err) {
     (void) context;
 
     fprintf(stderr, "**ERROR: %d, \"%s\"\r\n", (int32_t) err, SCPI_ErrorTranslate(err));
@@ -110,21 +114,31 @@ scpi_command_t scpi_commands[] = {
     //{ .pattern = "OUTPut[1|2]?", .callback= dscpi_outputQ,},
     //{ .pattern = "OUTPut1?", .callback= dscpi_outputQ,},
     //{ .pattern = "OUTPut2?", .callback= dscpi_outputQ,},
-    { .pattern = "OUTPut?", .callback= dscpi_outputQ,},
-    { .pattern = "OUTPut:LOAD?", .callback= dscpi_output_loadQ,},
+#if 0
+    { .pattern = "OUTPut?", .callback= dscpi_output1Q,},
+    { .pattern = "OUTP1?", .callback= dscpi_output1Q,},
+    { .pattern = "OUTPUT1?", .callback= dscpi_output1Q,},
+    { .pattern = "OUTP2?", .callback= dscpi_output2Q,},
+    { .pattern = "OUTPUT2?", .callback= dscpi_output2Q,},
+    { .pattern = "OUTPut", .callback= dscpi_output1, },
+    { .pattern = "OUTP1", .callback= dscpi_output1, },
+    { .pattern = "OUTPUT1", .callback= dscpi_output1, },
+    { .pattern = "OUTP2", .callback= dscpi_output2, },
+    { .pattern = "OUTPUT2", .callback= dscpi_output2, },
     //{ .pattern = "OUTPut[<n>]:load?", .callback= dscpi_outputQ,},
     //{ .pattern = "OUTPut[2]", .callback= dscpi_output,},
 //    {.pattern = "[SOURce]:APPLy", .callback= dscpi_apply,},
 //    {.pattern = "[SOURce]:APPLy?", .callback= dscpi_applyQ,},
     {.pattern = ":APPLy", .callback= dscpi_apply,},
     {.pattern = ":APPLy?", .callback= dscpi_applyQ,},
+#endif
     SCPI_CMD_LIST_END
 };
 
 
 scpi_interface_t scpi_interface = {
-    .write = myWrite,
-    .error = dscpi_error,
+    .write = scpi_impl_write,
+    .error = scpi_impl_error,
     .reset = NULL,
     .test = NULL,
     .control = NULL,
@@ -144,7 +158,7 @@ scpi_t scpi_context = {
 };
 
 // TODO Should be ok to be static?
-size_t myWrite(scpi_t * context, const char * data, size_t len) {
+size_t scpi_impl_write(scpi_t * context, const char * data, size_t len) {
     (void) context;
     printf("<scpi_write: %s>\n", data);
     memcpy(secret_output, data, len);
@@ -187,3 +201,5 @@ void scpi_glue_input(uint8_t *buf, uint16_t len, bool final, char *magic)
 		SCPI_Input(&scpi_context, NULL, 0);
 	}
 }
+
+#endif
