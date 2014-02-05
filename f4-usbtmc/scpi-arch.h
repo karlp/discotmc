@@ -18,6 +18,10 @@ extern "C" {
 	void scpi_glue_input(uint8_t *buf, uint16_t len, bool final);
 	void scpi_init(void);
 
+	
+	
+	/* handlers */
+	
 
 
 #ifdef	__cplusplus

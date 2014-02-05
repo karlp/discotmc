@@ -28,6 +28,7 @@
 #include "syscfg.h"
 #include "usb_tmc.h"
 #include "scpi-arch.h"
+#include "funcgen.h"
 
 int _write(int file, char *ptr, int len);
 
@@ -91,6 +92,7 @@ int main(void)
 	usart_init(115200);
 	usb_tmc_init(&usbd_dev);
 	scpi_init();
+	funcgen_init_arch();
 	printf("Disco non stop TMC!\n");
 
 	while (1) {

@@ -4,20 +4,64 @@
 #include <scpi/scpi.h>
 #include "scpi-arch.h"
 #include "usb_tmc.h"
+#include "funcgen.h"
 
 size_t myWrite(scpi_t * context, const char * data, size_t len);
+int scpi_impl_error(scpi_t * context, int_fast16_t err);
 scpi_result_t my_reset_handler(scpi_t *context);
+
+/* SCPI HANDLERS ----------------------------- */
+
+static int dscpi_output_inner(scpi_t *context, int output) {
+		bool action;
+        if (!SCPI_ParamBool(context, &action, true)) {
+                return SCPI_RES_ERR;
+        }
+        printf("turning output %d %s", output + 1, action ? "on" : "off");
+	if (action) {
+		funcgen_go();
+	} else {
+		funcgen_stop();
+	}
+	return SCPI_RES_OK;
+}
+
+scpi_result_t dscpi_output1(scpi_t *context) {
+	return dscpi_output_inner(context, 0);
+}
+
+static int dscpi_outputQ_inner(scpi_t *context, int output) {
+	printf("outputQ[%d]", output + 1);
+	struct funcgen_state_t *fs;
+	fs = funcgen_getstate();
+	SCPI_ResultBool(context, fs->outputs[output]);
+	return SCPI_RES_OK;
+}
+
+scpi_result_t dscpi_output1Q(scpi_t *context) {
+	return dscpi_outputQ_inner(context, 0);
+}
+
+scpi_result_t dscpi_apply_sin1(scpi_t *context) {
+	// Need to recalc shit here...
+	(void)context;
+	return SCPI_RES_OK;
+}
+
+/* end scpi handlers ---------------------*/
 
 scpi_command_t scpi_commands[] = {
     { .pattern = "*IDN?", .callback = SCPI_CoreIdnQ,},
     { .pattern = "*RST", .callback = SCPI_CoreRst,},
-    //{ .pattern = "MEASure:VOLTage:DC?", .callback = DMM_MeasureVoltageDcQ,},
+    { .pattern = "OUTP1", .callback = dscpi_output1,},
+    { .pattern = "OUTP1?", .callback = dscpi_output1Q,},
+    { .pattern = "SOUR1:APPLy:SIN", .callback = dscpi_apply_sin1,},
     SCPI_CMD_LIST_END
 };
 
 scpi_interface_t scpi_interface = {
     .write = myWrite,
-    .error = NULL,
+    .error = scpi_impl_error,
     .reset = my_reset_handler,
     .test = NULL,
     .control = NULL,
@@ -75,7 +119,15 @@ size_t myWrite(scpi_t *context, const char *data, size_t len) {
 	return len;
 }
 
+int scpi_impl_error(scpi_t * context, int_fast16_t err)
+{
+        (void) context;
+        printf("**ERROR: %d, \"%s\"\r\n", err, SCPI_ErrorTranslate(err));
+        return 0;
+}
+
 scpi_result_t my_reset_handler(scpi_t *context) {
+	(void)context;
 	/* TODO could do a full system reset here? */
 	printf("Result handler got called!\n");
 	return SCPI_RES_OK;
