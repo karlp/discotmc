@@ -17,12 +17,13 @@ extern "C" {
 
 	struct funcgen_state_t {
 		bool outputs[2];
+		int freq[2];
 	};
 
 	void funcgen_init_arch(void);
 	/* gross api! */
-	void funcgen_go(void);
-	void funcgen_stop(void);
+	void funcgen_go(int channel, int frequency);
+	void funcgen_stop(int channel);
 	struct funcgen_state_t * funcgen_getstate(void);
 
 
