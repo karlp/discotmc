@@ -12,7 +12,7 @@
 static struct funcgen_state_t state;
 
 /* From ST's example code */
-const uint16_t lut_sine[32] = {
+const uint16_t lut_sine[] = {
                       2047, 2447, 2831, 3185, 3498, 3750, 3939, 4056, 4095, 4056,
                       3939, 3750, 3495, 3185, 2831, 2447, 2047, 1647, 1263, 909,
                       599, 344, 155, 38, 0, 38, 155, 344, 599, 909, 1263, 1647};
@@ -55,17 +55,26 @@ static void dac_setup_1(void)
 static void timer_setup_1(void)
 {
 	timer_reset(TIM6);
+	// APB is maxed at 42Mhz, so APB timers run at 84Mhz
 	// 42Mhz / 100khz -1.  // 42 is apb1 max speed
-	timer_set_prescaler(TIM6, 419);
+	timer_set_prescaler(TIM6, 839);
 	// 100khz for 10 ticks = 10 khz overflow = 100us overflow interrupts
 	// == output frequency == wavelength * 100usec
 	// == ~32 * 100usec == ~312Hz?
-	timer_set_period(TIM6, 10);
+	timer_set_period(TIM6, 9);
+
+	nvic_enable_irq(NVIC_TIM6_DAC_IRQ);
+	timer_enable_irq(TIM6, TIM_DIER_UIE);
 
 	timer_set_master_mode(TIM6, TIM_CR2_MMS_UPDATE);
 	timer_enable_counter(TIM6);
 }
 
+void tim6_dac_isr(void)
+{
+	timer_clear_flag(TIM6, TIM_SR_UIF);
+	gpio_toggle(GPIOC, GPIO1);
+}
 
 
 
@@ -77,6 +86,10 @@ void funcgen_init_arch(void) {
 	rcc_periph_clock_enable(RCC_TIM6); /* channel 1 triggers */
 	rcc_periph_clock_enable(RCC_TIM7); /* channel 2 triggers */
 	gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO4|GPIO5);
+
+	/* timing tests */
+	rcc_periph_clock_enable(RCC_GPIOC);
+	gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO1);
 }
 
 /* gross api! */

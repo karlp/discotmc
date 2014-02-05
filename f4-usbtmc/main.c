@@ -83,7 +83,7 @@ int main(void)
 {
 	usbd_device *usbd_dev;
 
-	rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_120MHZ]);
+	rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_168MHZ]);
 	/* Leds are on port D */
 	rcc_periph_clock_enable(RCC_GPIOD);
 	gpio_mode_setup(LED_RX_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
