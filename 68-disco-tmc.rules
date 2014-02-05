@@ -1,0 +1,7 @@
+# udev rules for the totally disco "disco-tmc" firmware
+# This is a hijacked unassigned vendor id at present....
+# sudo udevadm control --reload-rules
+
+# Disco-TMC
+ATTRS{idVendor}=="c03e", ATTRS{idProduct}=="b007", MODE="664", GROUP="plugdev"
+

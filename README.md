@@ -6,15 +6,25 @@ but the flexibility can't be beat.
 getting started....
 
 ```
+git submodule update --init
+```
+
+Device firmware portion
+=======================
+```
 make -C libopencm3
+make -C scpi-parser/libscpi
 make -C f4-usbtmc
 make -C f4-usbtmc flash  # assumes openocd installed and operational
 ```
 
-host side......
-
+host side
+=========
 ```
-virtualenv --use-site-packages .venv
+sudo cp 68-disco-tmc.rules /etc/udev/rules.d/
+sudo udevadm control --reload-rules
+[plug in or reset board here]
+virtualenv --system-site-packages .venv
 . .venv/bin/activate
 pip install -e python-usbtmc
 python tmcpoke.py   # should toggle the red led on the board
