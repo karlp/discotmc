@@ -1,0 +1,21 @@
+Looks to be a USB3 issue?
+
+Home:
+    Feb 06 23:39:19 tera kernel: usb 1-4.4.4: reset full-speed USB device number 10 using ehci-pci
+    Feb 06 23:39:19 tera kernel: usb 1-4.4.4: unable to get BOS descriptor
+    Feb 06 23:39:19 tera kernel: usb 1-4.4.4: usbfs: process 16246 (python) did not claim inte... use
+on a "usb3" port
+    Feb 06 23:46:48 tera kernel: usb 3-3: reset full-speed USB device number 3 using ohci-pci
+    Feb 06 23:46:49 tera kernel: usb 3-3: unable to get BOS descriptor
+    Feb 06 23:46:49 tera kernel: usb 3-3: usbfs: process 16485 (python) did not claim interfac... use
+
+Work:
+    Feb 06 15:45:50 pojak kernel: usb 3-4.4: reset full-speed USB device number 44 using xhci_hcd
+    Feb 06 15:45:50 pojak kernel: usb 3-4.4: unable to get BOS descriptor
+    Feb 06 15:45:50 pojak kernel: xhci_hcd 0000:00:14.0: xHCI xhci_drop_endpoint called with disabled ep...b1700
+    Feb 06 15:45:50 pojak kernel: xhci_hcd 0000:00:14.0: xHCI xhci_drop_endpoint called with disabled ep...b1740
+    Feb 06 15:45:50 pojak kernel: usb 3-4.4: usbfs: process 2967 (python) did not claim interface 0 before use
+    Feb 06 15:45:50 pojak kernel: xhci_hcd 0000:00:14.0: Too many fragments 65, max 63
+    Feb 06 15:45:50 pojak kernel: usb 3-4.4: usbfs: usb_submit_urb returned -12 Feb 06 15:45:50 pojak python[2967]: detected unhandled Python exception in 'tmcpoke.py'
+
+
