@@ -143,7 +143,7 @@ scpi_t scpi_context = {
 	.units = scpi_units_def,
 	.special_numbers = scpi_special_numbers_def,
 	.idn =
-	{"Ekta labs", "DiscoTMC-F4", NULL, "0.1"},
+	{"Ekta labs", "DiscoTMC-F4", serial_number, "0.1"},
 };
 
 void scpi_init(void) {

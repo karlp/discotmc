@@ -5,6 +5,8 @@
 #include <libopencm3/usb/usbstd.h>
 
 #include <libopencm3/cm3/nvic.h>
+#include <libopencm3/stm32/crc.h>
+#include <libopencm3/stm32/desig.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/usb/usbd.h>
@@ -93,10 +95,12 @@ static const struct usb_config_descriptor config = {
 	.interface = ifaces,
 };
 
+char serial_number[9];
+
 static const char *usb_strings[] = {
 	"libopencm3",
 	"usbtmc sample",
-	"none",
+	serial_number,
 	"DEMO",
 };
 
@@ -110,6 +114,30 @@ static const struct usb_tmc_get_capabilities_response capabilities = {
 	.device_capabilities = 0
 };
 
+static void load_serial_number(char *snum) {
+	/*
+	 * Also, load up a serial number from the device unique id field.
+	 * The CRC unit in the stm32 is pretty bogus, but it will work for us,
+	 * as we don't actually need to share the crc with anyone else, we're
+	 * just using it as a hash function on the uniqueid
+	 */
+	rcc_periph_clock_enable(RCC_CRC);
+	uint32_t hashed_serial;
+	crc_reset();
+	crc_calculate(DESIG_UNIQUE_ID0);
+	crc_calculate(DESIG_UNIQUE_ID1);
+	hashed_serial = crc_calculate(DESIG_UNIQUE_ID2);
+	for (int i = 0; i < 8; i++) {
+		int c = (hashed_serial >> (i * 4)) & 0xf;
+		if (c > 9) {
+			snum[i] = c + 'A' - 10;
+		} else {
+			snum[i] = c + '0';
+		}
+	}
+	snum[9] = '\0';
+}
+
 void usb_tmc_setup_pre_arch(void)
 {
 	rcc_periph_clock_enable(RCC_GPIOA);
@@ -119,6 +147,7 @@ void usb_tmc_setup_pre_arch(void)
 		GPIO9 | GPIO11 | GPIO12);
 	gpio_set_af(GPIOA, GPIO_AF10, GPIO9 | GPIO11 | GPIO12);
 
+	load_serial_number(serial_number);
 }
 
 void usb_tmc_setup_post_arch(void)

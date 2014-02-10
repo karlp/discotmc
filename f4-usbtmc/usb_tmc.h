@@ -44,6 +44,7 @@ extern "C" {
 	void usb_tmc_setup_pre_arch(void);
 	void usb_tmc_setup_post_arch(void);
 	void tmc_glue_send_data(uint8_t *buf, size_t len);
+	extern char serial_number[9];
 
 #ifdef	__cplusplus
 }
