@@ -6,9 +6,9 @@
 #include "usb_tmc.h"
 #include "funcgen.h"
 
-size_t myWrite(scpi_t * context, const char * data, size_t len);
+size_t scpi_impl_write(scpi_t * context, const char * data, size_t len);
 int scpi_impl_error(scpi_t * context, int_fast16_t err);
-scpi_result_t my_reset_handler(scpi_t *context);
+scpi_result_t scpi_imple_reset(scpi_t *context);
 char numbuf[100]; // for printing numbers with units
 
 /* SCPI HANDLERS ----------------------------- */
@@ -119,9 +119,9 @@ scpi_command_t scpi_commands[] = {
 };
 
 scpi_interface_t scpi_interface = {
-	.write = myWrite,
+	.write = scpi_impl_write,
 	.error = scpi_impl_error,
-	.reset = my_reset_handler,
+	.reset = scpi_imple_reset,
 	.test = NULL,
 	.control = NULL,
 };
@@ -172,7 +172,7 @@ void scpi_glue_input(uint8_t *buf, uint16_t len, bool final) {
 	}
 }
 
-size_t myWrite(scpi_t *context, const char *data, size_t len) {
+size_t scpi_impl_write(scpi_t *context, const char *data, size_t len) {
 	(void) context;
 	hexdump("scpi reply", (uint8_t *) data, len);
 	tmc_glue_send_data((uint8_t *) data, len);
@@ -185,7 +185,7 @@ int scpi_impl_error(scpi_t * context, int_fast16_t err) {
 	return 0;
 }
 
-scpi_result_t my_reset_handler(scpi_t *context) {
+scpi_result_t scpi_imple_reset(scpi_t *context) {
 	(void) context;
 	/* TODO could do a full system reset here? */
 	printf("Result handler got called!\n");
