@@ -11,7 +11,23 @@ int scpi_impl_error(scpi_t * context, int_fast16_t err);
 scpi_result_t scpi_imple_reset(scpi_t *context);
 char numbuf[100]; // for printing numbers with units
 
-/* SCPI HANDLERS ----------------------------- */
+	/* handlers */
+	scpi_result_t dscpi_output1(scpi_t *context);
+	scpi_result_t dscpi_output1Q(scpi_t *context);
+	scpi_result_t dscpi_apply_sin1(scpi_t *context);
+
+
+	/* commands */
+	scpi_command_t scpi_commands[] = {
+		{ .pattern = "*IDN?", .callback = SCPI_CoreIdnQ,},
+		{ .pattern = "*RST", .callback = SCPI_CoreRst,},
+		{ .pattern = "OUTP1", .callback = dscpi_output1,},
+		{ .pattern = "OUTP1?", .callback = dscpi_output1Q,},
+		{ .pattern = "SOUR1:APPLy:SIN", .callback = dscpi_apply_sin1,},
+		SCPI_CMD_LIST_END
+	};
+
+
 
 static int dscpi_output_inner(scpi_t *context, int output) {
 	bool action;
@@ -19,13 +35,7 @@ static int dscpi_output_inner(scpi_t *context, int output) {
 		return SCPI_RES_ERR;
 	}
 	printf("turning output %d %s", output + 1, action ? "on" : "off");
-	if (action) {
-		struct funcgen_state_t *fs;
-		fs = funcgen_getstate();
-		funcgen_go(output, fs->freq[output]);
-	} else {
-		funcgen_stop(output);
-	}
+	funcgen_output(output, action);
 	return SCPI_RES_OK;
 }
 
@@ -45,7 +55,7 @@ scpi_result_t dscpi_output1Q(scpi_t *context) {
 	return dscpi_outputQ_inner(context, 0);
 }
 
-int dscpi_apply_sin_inner(scpi_t *context, int output) {
+static int dscpi_apply_sin_inner(scpi_t *context, int output) {
 	scpi_number_t freq;
 	scpi_number_t ampl;
 	scpi_number_t offset;
@@ -70,6 +80,12 @@ int dscpi_apply_sin_inner(scpi_t *context, int output) {
 			ampl.unit = SCPI_UNIT_VOLT;
 			ampl.value = 0.1; // 100 mV by default
 		}
+		if (ampl.type == SCPI_NUM_MIN) {
+			ampl.value = 0;
+		}
+		if (ampl.type == SCPI_NUM_MAX) {
+			ampl.value = FULL_SCALE;
+		}
 		if (ampl.unit == SCPI_UNIT_NONE) {
 			ampl.unit = SCPI_UNIT_VOLT;
 		}
@@ -82,12 +98,17 @@ int dscpi_apply_sin_inner(scpi_t *context, int output) {
 		if (offset.type == SCPI_NUM_DEF) {
 			offset.type = SCPI_NUM_NUMBER;
 			offset.unit = SCPI_UNIT_VOLT;
+			offset.value = FULL_SCALE / 2.0;
+		}
+		if (offset.type == SCPI_NUM_MIN) {
 			offset.value = 0;
+		}
+		if (offset.type == SCPI_NUM_MAX) {
+			offset.value = FULL_SCALE;
 		}
 		if (offset.unit == SCPI_UNIT_NONE) {
 			offset.unit = SCPI_UNIT_VOLT;
 		}
-		/* handle minimum, maximum */
 	}
 #define FULL_DEBUG 1
 #if FULL_DEBUG
@@ -98,7 +119,7 @@ int dscpi_apply_sin_inner(scpi_t *context, int output) {
 	SCPI_NumberToStr(context, &offset, numbuf, sizeof (numbuf));
 	printf("offset: %s", numbuf);
 #endif
-	funcgen_go(output, freq.value);
+	funcgen_sin(output, freq.value, ampl.value, offset.value);
 	return SCPI_RES_OK;
 }
 
@@ -108,15 +129,6 @@ scpi_result_t dscpi_apply_sin1(scpi_t *context) {
 }
 
 /* end scpi handlers ---------------------*/
-
-scpi_command_t scpi_commands[] = {
-	{ .pattern = "*IDN?", .callback = SCPI_CoreIdnQ,},
-	{ .pattern = "*RST", .callback = SCPI_CoreRst,},
-	{ .pattern = "OUTP1", .callback = dscpi_output1,},
-	{ .pattern = "OUTP1?", .callback = dscpi_output1Q,},
-	{ .pattern = "SOUR1:APPLy:SIN", .callback = dscpi_apply_sin1,},
-	SCPI_CMD_LIST_END
-};
 
 scpi_interface_t scpi_interface = {
 	.write = scpi_impl_write,

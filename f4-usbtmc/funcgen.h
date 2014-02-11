@@ -13,17 +13,22 @@ extern "C" {
 #endif
 	/* TODO - put this somewhere more useful */
 #define ARRAY_LENGTH(array) (sizeof((array))/sizeof((array)[0]))
+#define FULL_SCALE 3.0
 
 
 	struct funcgen_state_t {
 		bool outputs[2];
 		int freq[2];
+		float ampl[2];
+		float offset[2];
 	};
 
 	void funcgen_init_arch(void);
 	/* gross api! */
-	void funcgen_go(int channel, int frequency);
-	void funcgen_stop(int channel);
+	void funcgen_sin(int channel, float frequency, float ampl, float offset);
+	void funcgen_square(int channel, float frequency, float ampl, float offset);
+	void funcgen_triangle(int channel, float frequency, float ampl, float offset);
+	void funcgen_output(int channel, bool enable);
 	struct funcgen_state_t * funcgen_getstate(void);
 
 

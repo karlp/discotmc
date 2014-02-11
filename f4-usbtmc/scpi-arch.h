@@ -13,16 +13,9 @@ extern "C" {
 #endif
 #include <stdint.h>
 
-
 	// Call this to feed data into the scpi blobs
 	void scpi_glue_input(uint8_t *buf, uint16_t len, bool final);
 	void scpi_init(void);
-
-	
-	
-	/* handlers */
-	
-
 
 #ifdef	__cplusplus
 }

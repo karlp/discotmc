@@ -14,6 +14,7 @@ static struct funcgen_state_t state = {
 	.outputs = { true, false, },
 };
 
+/* http://yehar.com/blog/?p=1220 perhaps */
 /* From ST's example code */
 const uint16_t lut_sine[] = {
 	2047, 2447, 2831, 3185, 3498, 3750, 3939, 4056, 4095, 4056,
@@ -21,6 +22,9 @@ const uint16_t lut_sine[] = {
 	599, 344, 155, 38, 0, 38, 155, 344, 599, 909, 1263, 1647
 };
 
+/* Output buffers after calculating ampl and offset */
+uint16_t output_wave1[512];
+uint16_t output_wave2[512];
 // TODO - need to extract common ch1/ch2 code...
 
 static void dma_setup_1(const uint16_t *wave_table, int wave_table_count) {
@@ -91,34 +95,78 @@ void funcgen_init_arch(void) {
 	gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO1);
 
 	/* hack to auto start */
-	funcgen_go(0, 3000);
+	funcgen_sin(0, 3000, 0.1, 1.5);
+}
+
+/*
+ * I ARE DUM
+ * http://stackoverflow.com/questions/3304513/stretching-out-an-array
+ */
+static float interp1(float x, const uint16_t a[], int n)
+{
+	if (x <= 0) {
+		return a[0];
+	}
+	if (x >= n - 1) {
+		return a[n - 1];
+	}
+	int j = x;
+	return a[j] + (x - j) * (a[j + 1] - a[j]);
+}
+
+void calculate_output(const uint16_t *source, int source_len,
+	uint16_t *dest, int dest_len,
+	float ampl, float offset)
+{
+	float step = (source_len - 1) / (dest_len - 1) * 1.0;
+	for (int i = 0; i < dest_len; i++) {
+		float si = interp1(i*step, source, source_len);
+		float offset_bits = offset / FULL_SCALE * 4095;
+		dest[i] = si * ampl / FULL_SCALE + offset_bits;
+	}
 }
 
 /* gross api! */
-void funcgen_go(int channel, int frequency) {
+void funcgen_sin(int channel, float frequency, float ampl, float offset) {
 	if (channel == 0) {
+		/* Take the input wave and calculate the wavetable for DMA */
+		calculate_output(lut_sine, ARRAY_LENGTH(lut_sine), output_wave1, ARRAY_LENGTH(output_wave1),
+			ampl, offset);
+		
 		int usecs_per_wave = 1000000 / frequency;
-		int sample_period_us = usecs_per_wave / ARRAY_LENGTH(lut_sine);
-		printf("Requested freq: %d, usecs/wave: %d, timerusec: %d\n", frequency, usecs_per_wave, sample_period_us);
+		int sample_period_us = usecs_per_wave / ARRAY_LENGTH(output_wave1);
+		printf("Requested freq: %f, usecs/wave: %d, timerusec: %d\n", frequency, usecs_per_wave, sample_period_us);
 		timer_setup_1(sample_period_us);
-		dma_setup_1(lut_sine, ARRAY_LENGTH(lut_sine));
+		dma_setup_1(output_wave1, ARRAY_LENGTH(output_wave1));
 		dac_setup_1();
 	} else {
 
 	}
 	state.outputs[channel] = true;
 	state.freq[channel] = frequency;
+	state.ampl[channel] = ampl;
+	state.offset[channel] = offset;
 }
 
-void funcgen_stop(int channel) {
+void funcgen_output(int channel, bool enable)
+{
 	switch (channel) {
-		case 1: dac_disable(CHANNEL_2);
-			break;
-		case 0:
-		default:
+	case 1: if (enable) {
+			dac_enable(CHANNEL_2);
+		} else {
+			dac_disable(CHANNEL_2);
+		}
+		break;
+	case 0:
+	default:
+		if (enable) {
+			dac_enable(CHANNEL_1);
+		} else {
 			dac_disable(CHANNEL_1);
+		}
+		break;
 	}
-	state.outputs[channel] = false;
+	state.outputs[channel] = enable;
 }
 
 struct funcgen_state_t* funcgen_getstate(void) {
