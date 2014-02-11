@@ -49,32 +49,50 @@ static void dma_setup_1(const uint16_t *wave_table, int wave_table_count) {
 	dma_enable_stream(DMA1, DMA_STREAM5);
 }
 
-static void dac_setup_1(void) {
+static void dac_setup(int channel) {
 	/* Setup the DAC channel 1, with timer 2 as trigger source.
 	 * Assume the DAC has woken up by the time the first transfer occurs */
-	dac_trigger_enable(CHANNEL_1);
-	dac_set_trigger_source(DAC_CR_TSEL1_T6);
-	dac_dma_enable(CHANNEL_1);
-	dac_enable(CHANNEL_1);
+	int chan;
+	switch (channel) {
+	case 1: dac_set_trigger_source(DAC_CR_TSEL2_T7);
+		chan = CHANNEL_2;
+		break;
+	default:
+	case 0:
+		dac_set_trigger_source(DAC_CR_TSEL1_T6);
+		chan = CHANNEL_1;
+		break;
+	}
+	dac_trigger_enable(chan);
+	dac_dma_enable(chan);
+	dac_enable(chan);
 }
 
-static void timer_setup_1(int period_us) {
-	timer_reset(TIM6);
+static void timer_setup(int channel, int period_us) {
+	uint32_t timer;
+	switch (channel) {
+	case 1: timer = TIM7;
+		break;
+	case 0:
+	default:
+		timer = TIM6;
+		break;
+	}
+	timer_reset(timer);
 	// APB is maxed at 42Mhz, so APB timers run at 84Mhz
 	// dac says 1msps max max, so at 1msps, we want a period of what, 1 Mhz _overflows_
 	// so at least 2 Mhz clock..., let's say 4 Mhz timer clock for max res stuff
 	if (period_us < 4000) {
-		timer_set_prescaler(TIM6, 20);  // 84MHz / 4MHz - 1 => ticks at 0.25usec
-		timer_set_period(TIM6, (period_us * 4) - 1);
+		timer_set_prescaler(timer, 20);  // 84MHz / 4MHz - 1 => ticks at 0.25usec
+		timer_set_period(timer, (period_us * 4) - 1);
 	} else {
 		printf("out of range period request: %d", period_us);
 	}
 
-	nvic_enable_irq(NVIC_TIM6_DAC_IRQ);
-	timer_enable_irq(TIM6, TIM_DIER_UIE);
+	timer_enable_irq(timer, TIM_DIER_UIE);
 
-	timer_set_master_mode(TIM6, TIM_CR2_MMS_UPDATE);
-	timer_enable_counter(TIM6);
+	timer_set_master_mode(timer, TIM_CR2_MMS_UPDATE);
+	timer_enable_counter(timer);
 }
 
 void tim6_dac_isr(void) {
@@ -94,6 +112,10 @@ void funcgen_init_arch(void) {
 	rcc_periph_clock_enable(RCC_GPIOC);
 	gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO1);
 
+	/* Just enable both permanently in NVIC */
+	nvic_enable_irq(NVIC_TIM6_DAC_IRQ); /* only used for timing debug */
+	/* nvic_enable_irq(NVIC_TIM7_IRQ); */
+	
 	/* hack to auto start */
 	funcgen_sin(0, 3000, 0.1, 1.5);
 }
@@ -136,9 +158,9 @@ void funcgen_sin(int channel, float frequency, float ampl, float offset) {
 		int usecs_per_wave = 1000000 / frequency;
 		int sample_period_us = usecs_per_wave / ARRAY_LENGTH(output_wave1);
 		printf("Requested freq: %f, usecs/wave: %d, timerusec: %d\n", frequency, usecs_per_wave, sample_period_us);
-		timer_setup_1(sample_period_us);
+		timer_setup(channel, sample_period_us);
 		dma_setup_1(output_wave1, ARRAY_LENGTH(output_wave1));
-		dac_setup_1();
+		dac_setup(channel);
 	} else {
 
 	}
