@@ -23,6 +23,10 @@ scpi_result_t dscpi_apply_noise1(scpi_t *context);
 scpi_result_t dscpi_apply_user1(scpi_t *context);
 scpi_result_t dscpi_apply1Q(scpi_t *context);
 scpi_result_t dscpi_apply2Q(scpi_t *context);
+scpi_result_t dscpi_data_dac1(scpi_t *context);
+scpi_result_t dscpi_data_dac2(scpi_t *context);
+scpi_result_t dscpi_data_dac1Q(scpi_t *context);
+scpi_result_t dscpi_data_dac2Q(scpi_t *context);
 
 
 /* commands */
@@ -40,6 +44,12 @@ scpi_command_t scpi_commands[] = {
 	//		{ .pattern = "SOUR1:APPLy:USER", .callback = dscpi_apply_user1,},
 	{ .pattern = "SOUR1:APPLy?", .callback = dscpi_apply1Q,},
 	{ .pattern = "SOUR2:APPLy?", .callback = dscpi_apply2Q,},
+	{ .pattern = "DATA1:DAC", .callback = dscpi_data_dac1,},
+	{ .pattern = "DATA2:DAC", .callback = dscpi_data_dac2,},
+	/* Why this isn't DATA[1|2]:DAC? I don't know...*/
+	{ .pattern = "SOUR1:ARB:OUTPut", .callback = dscpi_data_dac1Q,},
+	{ .pattern = "SOUR2:ARB:OUTPut", .callback = dscpi_data_dac2Q,},
+
 	SCPI_CMD_LIST_END
 };
 
@@ -218,6 +228,47 @@ scpi_result_t dscpi_apply2Q(scpi_t *context)
 {
 	return dscpi_applyQ_inner(context, 1);
 }
+
+/* DATA:DAC */
+static scpi_result_t dscpi_data_dac_inner(scpi_t *context, int channel)
+{
+	// TODO
+	(void) context;
+	struct funcgen_output_t *fo = funcgen_getstate()->outputs[channel];
+	(void) fo;
+	return SCPI_RES_ERR;
+}
+
+scpi_result_t dscpi_data_dac1(scpi_t *context)
+{
+	return dscpi_data_dac_inner(context, 0);
+}
+
+scpi_result_t dscpi_data_dac2(scpi_t *context)
+{
+	return dscpi_data_dac_inner(context, 1);
+}
+
+/* SOURx:OUTP:ARB x,y (DATA:DAC?) */
+static scpi_result_t dscpi_data_dacQ_inner(scpi_t *context, int channel)
+{
+	// TODO
+	(void) context;
+	struct funcgen_output_t *fo = funcgen_getstate()->outputs[channel];
+	(void) fo;
+	return SCPI_RES_ERR;
+}
+
+scpi_result_t dscpi_data_dac1Q(scpi_t *context)
+{
+	return dscpi_data_dacQ_inner(context, 0);
+}
+
+scpi_result_t dscpi_data_dac2Q(scpi_t *context)
+{
+	return dscpi_data_dacQ_inner(context, 1);
+}
+
 
 /* end scpi handlers ---------------------*/
 
