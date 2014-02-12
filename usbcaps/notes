@@ -1,3 +1,14 @@
+
+notes about the xhci fragment problem:
+http://permalink.gmane.org/gmane.linux.usb.general/102089
+http://permalink.gmane.org/gmane.linux.usb.general/102216
+
+Changing python-usbtmc's defualt max read req from 1024x1024 down to 512x1024 "fixes" it, but the xhci
+problems are still there.
+
+
+--- older notes below 
+
 Looks to be a USB3 issue?
 
 Home:
