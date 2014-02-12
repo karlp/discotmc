@@ -33,6 +33,12 @@ scpi_result_t dscpi_data_dac2Q(scpi_t *context);
 scpi_command_t scpi_commands[] = {
 	{ .pattern = "*IDN?", .callback = SCPI_CoreIdnQ,},
 	{ .pattern = "*RST", .callback = SCPI_CoreRst,},
+
+	/* Required SCPI commands (SCPI std V1999.0 4.2.1) */
+	{.pattern = "SYSTem:ERRor[:NEXT]?", .callback = SCPI_SystemErrorNextQ,},
+	{.pattern = "SYSTem:ERRor:COUNt?", .callback = SCPI_SystemErrorCountQ,},
+	{.pattern = "SYSTem:VERSion?", .callback = SCPI_SystemVersionQ,},
+
 	{ .pattern = "OUTP1", .callback = dscpi_output1,},
 	{ .pattern = "OUTP2", .callback = dscpi_output2,},
 	{ .pattern = "OUTP1?", .callback = dscpi_output1Q,},
