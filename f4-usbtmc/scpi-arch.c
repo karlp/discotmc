@@ -8,7 +8,7 @@
 
 size_t scpi_impl_write(scpi_t * context, const char * data, size_t len);
 int scpi_impl_error(scpi_t * context, int_fast16_t err);
-scpi_result_t scpi_imple_reset(scpi_t *context);
+scpi_result_t scpi_impl_reset(scpi_t *context);
 char numbuf[100]; // for printing numbers with units
 
 /* handlers */
@@ -281,7 +281,7 @@ scpi_result_t dscpi_data_dac2Q(scpi_t *context)
 scpi_interface_t scpi_interface = {
 	.write = scpi_impl_write,
 	.error = scpi_impl_error,
-	.reset = scpi_imple_reset,
+	.reset = scpi_impl_reset,
 	.test = NULL,
 	.control = NULL,
 };
@@ -350,7 +350,7 @@ int scpi_impl_error(scpi_t * context, int_fast16_t err)
 	return 0;
 }
 
-scpi_result_t scpi_imple_reset(scpi_t *context)
+scpi_result_t scpi_impl_reset(scpi_t *context)
 {
 	(void) context;
 	/* TODO could do a full system reset here? */
