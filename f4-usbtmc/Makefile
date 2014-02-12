@@ -21,6 +21,7 @@ OBJS += usb_tmc.o scpi-arch.o funcgen.o
 CFLAGS += -std=c99 -ggdb3
 CFLAGS+=-I../scpi-parser/libscpi/inc
 LDFLAGS+=-L../scpi-parser/libscpi/dist/arm-none-eabi
+LDFLAGS+= --specs=nano.specs
 LDLIBS+=-lscpi
 
 LDSCRIPT = ../stm32f4-discovery.ld
