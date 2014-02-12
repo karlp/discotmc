@@ -9,9 +9,22 @@
 
 #include "funcgen.h"
 
+static struct funcgen_output_t _output1 = {
+	.enabled = false,
+	.ampl = 0.1,
+	.offset = FULL_SCALE / 2,
+	.freq = 1000,
+};
+
+static struct funcgen_output_t _output2 = {
+	.enabled = false,
+	.ampl = 0.1,
+	.offset = FULL_SCALE / 2,
+	.freq = 1000,
+};
+
 static struct funcgen_state_t state = {
-	.freq = {1000, 1000,},
-	.outputs = { true, false, },
+	.outputs = { &_output1, &_output2 },
 };
 
 /* http://yehar.com/blog/?p=1220 perhaps */
@@ -22,31 +35,41 @@ const uint16_t lut_sine[] = {
 	599, 344, 155, 38, 0, 38, 155, 344, 599, 909, 1263, 1647
 };
 
-/* Output buffers after calculating ampl and offset */
-uint16_t output_wave1[512];
-uint16_t output_wave2[512];
 // TODO - need to extract common ch1/ch2 code...
 
-static void dma_setup_1(const uint16_t *wave_table, int wave_table_count) {
+/* FIXME - move this to a layer of platform code, with "null", "f4" and "l1" platforms */
+static void dma_setup(int channel, const uint16_t *wave_table, int wave_table_count) {
 	/* DAC channel 1 uses DMA controller 1 Stream 5 Channel 7. */
+	/* DAC channel 2 uses DMA controller 1 Stream 6 Channel 7. */
+	int stream;
+	switch (channel) {
+	case CHANNEL_2:
+		stream = DMA_STREAM6;
+		break;
+	default:
+	case CHANNEL_1:
+		stream = DMA_STREAM5;
+		break;
+	}
 #define WANT_USE_DMA_INTERRUPTS 0
 #if WANT_USE_DMA_INTERRUPTS
 	nvic_enable_irq(NVIC_DMA1_STREAM5_IRQ);
 	dma_enable_transfer_complete_interrupt(DMA1, DMA_STREAM5);
 #endif
-	dma_stream_reset(DMA1, DMA_STREAM5);
-	dma_set_priority(DMA1, DMA_STREAM5, DMA_SxCR_PL_LOW);
-	dma_set_memory_size(DMA1, DMA_STREAM5, DMA_SxCR_MSIZE_16BIT);
-	dma_set_peripheral_size(DMA1, DMA_STREAM5, DMA_SxCR_PSIZE_16BIT);
-	dma_enable_memory_increment_mode(DMA1, DMA_STREAM5);
-	dma_enable_circular_mode(DMA1, DMA_STREAM5);
-	dma_set_transfer_mode(DMA1, DMA_STREAM5, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
+	dma_stream_reset(DMA1, stream);
+	dma_set_priority(DMA1, stream, DMA_SxCR_PL_LOW);
+	dma_set_memory_size(DMA1, stream, DMA_SxCR_MSIZE_16BIT);
+	dma_set_peripheral_size(DMA1, stream, DMA_SxCR_PSIZE_16BIT);
+	dma_enable_memory_increment_mode(DMA1, stream);
+	dma_enable_circular_mode(DMA1, stream);
+	dma_set_transfer_mode(DMA1, stream, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
 	/* TODO - _can_ use DAC_DHR12RD if we've got both channels active! */
-	dma_set_peripheral_address(DMA1, DMA_STREAM5, (uint32_t) & DAC_DHR12R1);
-	dma_set_memory_address(DMA1, DMA_STREAM5, (uint32_t) wave_table);
-	dma_set_number_of_data(DMA1, DMA_STREAM5, wave_table_count);
-	dma_channel_select(DMA1, DMA_STREAM5, DMA_SxCR_CHSEL_7);
-	dma_enable_stream(DMA1, DMA_STREAM5);
+	dma_set_peripheral_address(DMA1, stream, (uint32_t) & DAC_DHR12R1);
+	dma_set_memory_address(DMA1, stream, (uint32_t) wave_table);
+	dma_set_number_of_data(DMA1, stream, wave_table_count);
+	/* DAC is channel 7 for both dacs */
+	dma_channel_select(DMA1, stream, DMA_SxCR_CHSEL_7);
+	dma_enable_stream(DMA1, stream);
 }
 
 static void dac_setup(int channel) {
@@ -103,7 +126,7 @@ void tim6_dac_isr(void) {
 void funcgen_init_arch(void) {
 	rcc_periph_clock_enable(RCC_DMA1);
 	rcc_periph_clock_enable(RCC_DAC);
-	rcc_periph_clock_enable(RCC_GPIOA);
+	rcc_periph_clock_enable(RCC_GPIOA); /* DAC output pins */
 	rcc_periph_clock_enable(RCC_TIM6); /* channel 1 triggers */
 	rcc_periph_clock_enable(RCC_TIM7); /* channel 2 triggers */
 	gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO4 | GPIO5);
@@ -117,7 +140,7 @@ void funcgen_init_arch(void) {
 	/* nvic_enable_irq(NVIC_TIM7_IRQ); */
 	
 	/* hack to auto start */
-	funcgen_sin(0, 3000, 0.1, 1.5);
+	//funcgen_sin(0, 1000, FULL_SCALE / 2, FULL_SCALE / 2);
 }
 
 /*
@@ -148,26 +171,27 @@ void calculate_output(const uint16_t *source, int source_len,
 	}
 }
 
-/* gross api! */
 void funcgen_sin(int channel, float frequency, float ampl, float offset) {
-	if (channel == 0) {
-		/* Take the input wave and calculate the wavetable for DMA */
-		calculate_output(lut_sine, ARRAY_LENGTH(lut_sine), output_wave1, ARRAY_LENGTH(output_wave1),
-			ampl, offset);
-		
-		int usecs_per_wave = 1000000 / frequency;
-		int sample_period_us = usecs_per_wave / ARRAY_LENGTH(output_wave1);
-		printf("Requested freq: %f, usecs/wave: %d, timerusec: %d\n", frequency, usecs_per_wave, sample_period_us);
-		timer_setup(channel, sample_period_us);
-		dma_setup_1(output_wave1, ARRAY_LENGTH(output_wave1));
-		dac_setup(channel);
-	} else {
+	uint16_t *wavedata = state.outputs[channel]->waveform;
+	
+	/* Take the input wave and calculate the wavetable for DMA */
+	calculate_output(lut_sine, ARRAY_LENGTH(lut_sine), wavedata, ARRAY_LENGTH(wavedata),
+		ampl, offset);
 
-	}
-	state.outputs[channel] = true;
-	state.freq[channel] = frequency;
-	state.ampl[channel] = ampl;
-	state.offset[channel] = offset;
+	int usecs_per_wave = 1000000 / frequency;
+	int sample_period_us = usecs_per_wave / ARRAY_LENGTH(wavedata);
+	printf("Requested freq: %f, usecs/wave: %d, timerusec: %d\n", frequency, usecs_per_wave, sample_period_us);
+	
+	/*+++ hardware setup +++*/
+	timer_setup(channel, sample_period_us);
+	dma_setup(channel, wavedata, ARRAY_LENGTH(wavedata));
+	dac_setup(channel);
+	/*++++++++++++++++++++++*/
+	
+	state.outputs[channel]->enabled = true;
+	state.outputs[channel]->freq = frequency;
+	state.outputs[channel]->ampl = ampl;
+	state.outputs[channel]->offset = offset;
 }
 
 void funcgen_output(int channel, bool enable)
@@ -188,7 +212,7 @@ void funcgen_output(int channel, bool enable)
 		}
 		break;
 	}
-	state.outputs[channel] = enable;
+	state.outputs[channel]->enabled = enable;
 }
 
 struct funcgen_state_t* funcgen_getstate(void) {

@@ -11,25 +11,40 @@ int scpi_impl_error(scpi_t * context, int_fast16_t err);
 scpi_result_t scpi_imple_reset(scpi_t *context);
 char numbuf[100]; // for printing numbers with units
 
-	/* handlers */
-	scpi_result_t dscpi_output1(scpi_t *context);
-	scpi_result_t dscpi_output1Q(scpi_t *context);
-	scpi_result_t dscpi_apply_sin1(scpi_t *context);
+/* handlers */
+scpi_result_t dscpi_output1(scpi_t *context);
+scpi_result_t dscpi_output1Q(scpi_t *context);
+scpi_result_t dscpi_apply_sin1(scpi_t *context);
+scpi_result_t dscpi_output2(scpi_t *context);
+scpi_result_t dscpi_output2Q(scpi_t *context);
+scpi_result_t dscpi_apply_sin2(scpi_t *context);
+scpi_result_t dscpi_apply_sq1(scpi_t *context);
+scpi_result_t dscpi_apply_noise1(scpi_t *context);
+scpi_result_t dscpi_apply_user1(scpi_t *context);
+scpi_result_t dscpi_apply1Q(scpi_t *context);
+scpi_result_t dscpi_apply2Q(scpi_t *context);
 
 
-	/* commands */
-	scpi_command_t scpi_commands[] = {
-		{ .pattern = "*IDN?", .callback = SCPI_CoreIdnQ,},
-		{ .pattern = "*RST", .callback = SCPI_CoreRst,},
-		{ .pattern = "OUTP1", .callback = dscpi_output1,},
-		{ .pattern = "OUTP1?", .callback = dscpi_output1Q,},
-		{ .pattern = "SOUR1:APPLy:SIN", .callback = dscpi_apply_sin1,},
-		SCPI_CMD_LIST_END
-	};
+/* commands */
+scpi_command_t scpi_commands[] = {
+	{ .pattern = "*IDN?", .callback = SCPI_CoreIdnQ,},
+	{ .pattern = "*RST", .callback = SCPI_CoreRst,},
+	{ .pattern = "OUTP1", .callback = dscpi_output1,},
+	{ .pattern = "OUTP2", .callback = dscpi_output2,},
+	{ .pattern = "OUTP1?", .callback = dscpi_output1Q,},
+	{ .pattern = "OUTP2?", .callback = dscpi_output2Q,},
+	{ .pattern = "SOUR1:APPLy:SINe", .callback = dscpi_apply_sin1,},
+	{ .pattern = "SOUR2:APPLy:SINe", .callback = dscpi_apply_sin2,},
+	//		{ .pattern = "SOUR1:APPLy:SQUare", .callback = dscpi_apply_sq1,},
+	//		{ .pattern = "SOUR1:APPLy:NOISe", .callback = dscpi_apply_noise1,},
+	//		{ .pattern = "SOUR1:APPLy:USER", .callback = dscpi_apply_user1,},
+	{ .pattern = "SOUR1:APPLy?", .callback = dscpi_apply1Q,},
+	{ .pattern = "SOUR2:APPLy?", .callback = dscpi_apply2Q,},
+	SCPI_CMD_LIST_END
+};
 
-
-
-static int dscpi_output_inner(scpi_t *context, int output) {
+static int dscpi_output_inner(scpi_t *context, int output)
+{
 	bool action;
 	if (!SCPI_ParamBool(context, &action, true)) {
 		return SCPI_RES_ERR;
@@ -39,23 +54,37 @@ static int dscpi_output_inner(scpi_t *context, int output) {
 	return SCPI_RES_OK;
 }
 
-scpi_result_t dscpi_output1(scpi_t *context) {
+scpi_result_t dscpi_output1(scpi_t *context)
+{
 	return dscpi_output_inner(context, 0);
 }
 
-static int dscpi_outputQ_inner(scpi_t *context, int output) {
+scpi_result_t dscpi_output2(scpi_t *context)
+{
+	return dscpi_output_inner(context, 1);
+}
+
+static int dscpi_outputQ_inner(scpi_t *context, int output)
+{
 	printf("outputQ[%d]", output + 1);
 	struct funcgen_state_t *fs;
 	fs = funcgen_getstate();
-	SCPI_ResultBool(context, fs->outputs[output]);
+	SCPI_ResultBool(context, fs->outputs[output]->enabled);
 	return SCPI_RES_OK;
 }
 
-scpi_result_t dscpi_output1Q(scpi_t *context) {
+scpi_result_t dscpi_output1Q(scpi_t *context)
+{
 	return dscpi_outputQ_inner(context, 0);
 }
 
-static int dscpi_apply_sin_inner(scpi_t *context, int output) {
+scpi_result_t dscpi_output2Q(scpi_t *context)
+{
+	return dscpi_outputQ_inner(context, 1);
+}
+
+static int dscpi_apply_sin_inner(scpi_t *context, int output)
+{
 	scpi_number_t freq;
 	scpi_number_t ampl;
 	scpi_number_t offset;
@@ -123,9 +152,71 @@ static int dscpi_apply_sin_inner(scpi_t *context, int output) {
 	return SCPI_RES_OK;
 }
 
-scpi_result_t dscpi_apply_sin1(scpi_t *context) {
-	// Need to recalc shit here...
+scpi_result_t dscpi_apply_sin1(scpi_t *context)
+{
 	return dscpi_apply_sin_inner(context, 0);
+}
+
+scpi_result_t dscpi_apply_sin2(scpi_t *context)
+{
+	return dscpi_apply_sin_inner(context, 1);
+}
+
+static const struct _output_mode output_modes[] = {
+	{.name = "SIN", .mode = OUTPUT_MODE_SINE,},
+	{.name = "TRI", .mode = OUTPUT_MODE_TRIANGLE,},
+	{.name = "SQU", .mode = OUTPUT_MODE_SQUARE,},
+	{.name = "USER", .mode = OUTPUT_MODE_USER,},
+	{.name = NULL, .mode = OUTPUT_MODE_NULL,},
+};
+
+static const char* get_output_mode_name(enum _funcgen_output_mode output_mode)
+{
+	for (int i = 0; output_modes[i].name != NULL; i++) {
+		if (output_modes[i].mode == output_mode) {
+			return output_modes[i].name;
+		}
+	}
+	return NULL;
+}
+
+static int dscpi_applyQ_inner(scpi_t *context, int output)
+{
+	printf("applyQ[%d]", output + 1);
+	struct funcgen_state_t *fs;
+	fs = funcgen_getstate();
+	struct funcgen_output_t *outp = fs->outputs[output];
+	SCPI_ResultString(context, get_output_mode_name(outp->mode));
+
+	scpi_number_t nn;
+	nn.type = SCPI_NUM_NUMBER;
+
+	nn.unit = SCPI_UNIT_HERTZ;
+	nn.value = outp->freq;
+	SCPI_NumberToStr(context, &nn, numbuf, sizeof (numbuf));
+	SCPI_ResultText(context, numbuf);
+
+	nn.unit = SCPI_UNIT_VOLT;
+	nn.value = outp->ampl;
+	SCPI_NumberToStr(context, &nn, numbuf, sizeof (numbuf));
+	SCPI_ResultText(context, numbuf);
+
+	nn.unit = SCPI_UNIT_VOLT;
+	nn.value = outp->offset;
+	SCPI_NumberToStr(context, &nn, numbuf, sizeof (numbuf));
+	SCPI_ResultText(context, numbuf);
+
+	return SCPI_RES_OK;
+}
+
+scpi_result_t dscpi_apply1Q(scpi_t *context)
+{
+	return dscpi_applyQ_inner(context, 0);
+}
+
+scpi_result_t dscpi_apply2Q(scpi_t *context)
+{
+	return dscpi_applyQ_inner(context, 1);
 }
 
 /* end scpi handlers ---------------------*/
@@ -158,11 +249,13 @@ scpi_t scpi_context = {
 	{"Ekta labs", "DiscoTMC-F4", serial_number, "0.1"},
 };
 
-void scpi_init(void) {
+void scpi_init(void)
+{
 	SCPI_Init(&scpi_context);
 }
 
-static void hexdump(char* prefix, uint8_t *buf, uint16_t len) {
+static void hexdump(char* prefix, uint8_t *buf, uint16_t len)
+{
 	int i;
 	printf("\n<%s: ", prefix);
 	for (i = 0; i < len; i++) {
@@ -176,7 +269,8 @@ static void hexdump(char* prefix, uint8_t *buf, uint16_t len) {
 	putchar('>');
 }
 
-void scpi_glue_input(uint8_t *buf, uint16_t len, bool final) {
+void scpi_glue_input(uint8_t *buf, uint16_t len, bool final)
+{
 	hexdump("feeding to scpi", buf, len);
 	SCPI_Input(&scpi_context, (char *) buf, len);
 	if (final) {
@@ -184,20 +278,23 @@ void scpi_glue_input(uint8_t *buf, uint16_t len, bool final) {
 	}
 }
 
-size_t scpi_impl_write(scpi_t *context, const char *data, size_t len) {
+size_t scpi_impl_write(scpi_t *context, const char *data, size_t len)
+{
 	(void) context;
 	hexdump("scpi reply", (uint8_t *) data, len);
 	tmc_glue_send_data((uint8_t *) data, len);
 	return len;
 }
 
-int scpi_impl_error(scpi_t * context, int_fast16_t err) {
+int scpi_impl_error(scpi_t * context, int_fast16_t err)
+{
 	(void) context;
 	printf("**ERROR: %d, \"%s\"\r\n", err, SCPI_ErrorTranslate(err));
 	return 0;
 }
 
-scpi_result_t scpi_imple_reset(scpi_t *context) {
+scpi_result_t scpi_imple_reset(scpi_t *context)
+{
 	(void) context;
 	/* TODO could do a full system reset here? */
 	printf("Result handler got called!\n");

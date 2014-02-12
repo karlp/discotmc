@@ -13,14 +13,39 @@ extern "C" {
 #endif
 	/* TODO - put this somewhere more useful */
 #define ARRAY_LENGTH(array) (sizeof((array))/sizeof((array)[0]))
+#define FUNCGEN_WAVE_SIZE	512
 #define FULL_SCALE 3.0
 
+	enum _funcgen_output_mode {
+		OUTPUT_MODE_SINE,
+		OUTPUT_MODE_TRIANGLE,
+		OUTPUT_MODE_SQUARE,
+		OUTPUT_MODE_USER,
+		OUTPUT_MODE_NULL,
+	};
+	
+	struct _output_mode {
+		const char * name;
+		enum _funcgen_output_mode mode;
+	};
+	
+	struct funcgen_output_t {
+		bool enabled;
+		/* In volts, p2p */
+		float ampl;
+		/* In volts, only sane from 0-FULL_SCALE*/
+		float offset;
+		/* number of counts of "waveform" to play per second */
+		float freq;
+		enum _funcgen_output_mode mode;
+		/* Output buffers after calculating ampl and offset, or user */
+		uint16_t waveform[FUNCGEN_WAVE_SIZE];
+		/* What portion of the waveform to consider valid */
+		int waveform_length;
+	};
 
 	struct funcgen_state_t {
-		bool outputs[2];
-		int freq[2];
-		float ampl[2];
-		float offset[2];
+		struct funcgen_output_t  *outputs[2];
 	};
 
 	void funcgen_init_arch(void);
