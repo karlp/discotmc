@@ -42,7 +42,8 @@ TESTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}/tests
 
 # Test Files
 TESTFILES= \
-	${TESTDIR}/TestFiles/f1
+	${TESTDIR}/TestFiles/f1 \
+	${TESTDIR}/TestFiles/f2
 
 # C Compiler Flags
 CFLAGS=
@@ -82,11 +83,21 @@ ${TESTDIR}/TestFiles/f1: ${TESTDIR}/tests/newcunittest.o ${OBJECTFILES:%.o=%_nom
 	${MKDIR} -p ${TESTDIR}/TestFiles
 	${LINK.c}   -o ${TESTDIR}/TestFiles/f1 $^ ${LDLIBSOPTIONS} -lcunit 
 
+${TESTDIR}/TestFiles/f2: ${TESTDIR}/_ext/1327450950/sine-generation-tests.c.o ${OBJECTFILES:%.o=%_nomain.o}
+	${MKDIR} -p ${TESTDIR}/TestFiles
+	${LINK.c}   -o ${TESTDIR}/TestFiles/f2 $^ ${LDLIBSOPTIONS} -lcunit 
+
 
 ${TESTDIR}/tests/newcunittest.o: tests/newcunittest.c 
 	${MKDIR} -p ${TESTDIR}/tests
 	${RM} "$@.d"
 	$(COMPILE.c) -g -I../scpi-parser/libscpi/inc -I../scpi-parser/libscpi/inc -MMD -MP -MF "$@.d" -o ${TESTDIR}/tests/newcunittest.o tests/newcunittest.c
+
+
+${TESTDIR}/_ext/1327450950/sine-generation-tests.c.o: ../scpi-parser/libscpi/src/tests/sine-generation-tests.c.c 
+	${MKDIR} -p ${TESTDIR}/_ext/1327450950
+	${RM} "$@.d"
+	$(COMPILE.c) -g -I../scpi-parser/libscpi/inc -MMD -MP -MF "$@.d" -o ${TESTDIR}/_ext/1327450950/sine-generation-tests.c.o ../scpi-parser/libscpi/src/tests/sine-generation-tests.c.c
 
 
 ${OBJECTDIR}/main_nomain.o: ${OBJECTDIR}/main.o main.c 
@@ -107,6 +118,7 @@ ${OBJECTDIR}/main_nomain.o: ${OBJECTDIR}/main.o main.c
 	@if [ "${TEST}" = "" ]; \
 	then  \
 	    ${TESTDIR}/TestFiles/f1 || true; \
+	    ${TESTDIR}/TestFiles/f2 || true; \
 	else  \
 	    ./${TEST} || true; \
 	fi

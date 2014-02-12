@@ -23,6 +23,12 @@
                      kind="TEST">
         <itemPath>tests/newcunittest.c</itemPath>
       </logicalFolder>
+      <logicalFolder name="f2"
+                     displayName="sine-generation-tests"
+                     projectFiles="true"
+                     kind="TEST">
+        <itemPath>../scpi-parser/libscpi/src/tests/sine-generation-tests.c.c</itemPath>
+      </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -58,9 +64,22 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
+      <item path="../scpi-parser/libscpi/src/tests/sine-generation-tests.c.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
       <folder path="TestFiles/f1">
         <linkerTool>
           <output>${TESTDIR}/TestFiles/f1</output>
+          <linkerLibItems>
+            <linkerOptionItem>-lcunit</linkerOptionItem>
+          </linkerLibItems>
+        </linkerTool>
+      </folder>
+      <folder path="TestFiles/f2">
+        <linkerTool>
+          <output>${TESTDIR}/TestFiles/f2</output>
           <linkerLibItems>
             <linkerOptionItem>-lcunit</linkerOptionItem>
           </linkerLibItems>
@@ -91,9 +110,22 @@
           <developmentMode>5</developmentMode>
         </asmTool>
       </compileType>
+      <item path="../scpi-parser/libscpi/src/tests/sine-generation-tests.c.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
       <folder path="TestFiles/f1">
         <linkerTool>
           <output>${TESTDIR}/TestFiles/f1</output>
+          <linkerLibItems>
+            <linkerOptionItem>-lcunit</linkerOptionItem>
+          </linkerLibItems>
+        </linkerTool>
+      </folder>
+      <folder path="TestFiles/f2">
+        <linkerTool>
+          <output>${TESTDIR}/TestFiles/f2</output>
           <linkerLibItems>
             <linkerOptionItem>-lcunit</linkerOptionItem>
           </linkerLibItems>
@@ -137,6 +169,11 @@
           </makeArtifact>
         </requiredProjects>
       </compileType>
+      <item path="../scpi-parser/libscpi/src/tests/sine-generation-tests.c.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
       <folder path="TestFiles/f1">
         <cTool>
           <incDir>
@@ -145,6 +182,14 @@
         </cTool>
         <linkerTool>
           <output>${TESTDIR}/TestFiles/f1</output>
+          <linkerLibItems>
+            <linkerOptionItem>-lcunit</linkerOptionItem>
+          </linkerLibItems>
+        </linkerTool>
+      </folder>
+      <folder path="TestFiles/f2">
+        <linkerTool>
+          <output>${TESTDIR}/TestFiles/f2</output>
           <linkerLibItems>
             <linkerOptionItem>-lcunit</linkerOptionItem>
           </linkerLibItems>
