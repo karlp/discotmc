@@ -13,7 +13,7 @@
 #include <string.h>
 
 #include "syscfg.h"
-#include "tmc.h"
+#include "../core/tmc.h"
 #include "usb_tmc.h"
 #include "scpi-arch.h"
 

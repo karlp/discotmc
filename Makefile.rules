@@ -57,7 +57,7 @@ ifeq ($(strip $(OPENCM3_DIR)),)
 # user has not specified the library path, so we try to detect it
 
 # where we search for the library
-LIBPATHS := ../libopencm3 ../../../../libopencm3 ../../../../../libopencm3
+LIBPATHS := ../../libopencm3 ../../../../libopencm3 ../../../../../libopencm3
 
 OPENCM3_DIR := $(wildcard $(LIBPATHS:=/locm3.sublime-project))
 OPENCM3_DIR := $(firstword $(dir $(OPENCM3_DIR)))
@@ -154,15 +154,15 @@ flash: $(BINARY).flash
 
 %.o: %.c
 	@#printf "  CC      $(*).c\n"
-	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) $(ARCH_FLAGS) -o $(*).o -c $(*).c
+	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) $(ARCH_FLAGS) -o $@ -c $<
 
 %.o: %.cxx
 	@#printf "  CXX     $(*).cxx\n"
-	$(Q)$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(ARCH_FLAGS) -o $(*).o -c $(*).cxx
+	$(Q)$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(ARCH_FLAGS) -o $@ -c $<
 
 %.o: %.cpp
 	@#printf "  CXX     $(*).cpp\n"
-	$(Q)$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(ARCH_FLAGS) -o $(*).o -c $(*).cpp
+	$(Q)$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(ARCH_FLAGS) -o $@ -c $<
 
 clean:
 	@#printf "  CLEAN\n"

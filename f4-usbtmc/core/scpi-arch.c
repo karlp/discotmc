@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <scpi/scpi.h>
 #include "scpi-arch.h"
-#include "usb_tmc.h"
+#include "../stm32f4/usb_tmc.h"
 #include "funcgen.h"
 
 size_t scpi_impl_write(scpi_t * context, const char * data, size_t len);
