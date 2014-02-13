@@ -1,15 +1,16 @@
-
+/*
+ * TODO - fix licenses
+ * 
+ * This is the _core_ scpi stuff
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <scpi/scpi.h>
 #include "scpi-arch.h"
-#include "../stm32f4/usb_tmc.h"
+#include "../stm32f4/usb_tmc.h"  // TODO extract serial numbe rout of this stuff
 #include "funcgen.h"
 
-size_t scpi_impl_write(scpi_t * context, const char * data, size_t len);
-int scpi_impl_error(scpi_t * context, int_fast16_t err);
-scpi_result_t scpi_impl_reset(scpi_t *context);
-char numbuf[100]; // for printing numbers with units
+static char numbuf[100]; // for printing numbers with units
 
 /* handlers */
 scpi_result_t dscpi_output1(scpi_t *context);
@@ -278,27 +279,19 @@ scpi_result_t dscpi_data_dac2Q(scpi_t *context)
 
 /* end scpi handlers ---------------------*/
 
-scpi_interface_t scpi_interface = {
-	.write = scpi_impl_write,
-	.error = scpi_impl_error,
-	.reset = scpi_impl_reset,
-	.test = NULL,
-	.control = NULL,
-};
-
 #define SCPI_INPUT_BUFFER_LENGTH 256
 static char scpi_input_buffer[SCPI_INPUT_BUFFER_LENGTH];
 
 //static scpi_reg_val_t scpi_regs[SCPI_REG_COUNT];
 
-scpi_t scpi_context = {
+static scpi_t scpi_context = {
 	.cmdlist = scpi_commands,
 	.buffer =
 	{
 		.length = SCPI_INPUT_BUFFER_LENGTH,
 		.data = scpi_input_buffer,
 	},
-	.interface = &scpi_interface,
+	.interface = NULL, /* Provided by platforms */
 	//.registers = scpi_regs,
 	.units = scpi_units_def,
 	.special_numbers = scpi_special_numbers_def,
@@ -306,12 +299,13 @@ scpi_t scpi_context = {
 	{"Ekta labs", "DiscoTMC-F4", serial_number, "0.1"},
 };
 
-void scpi_init(void)
+void dscpi_init(scpi_interface_t *intf)
 {
+	scpi_context.interface = intf;
 	SCPI_Init(&scpi_context);
 }
 
-static void hexdump(char* prefix, uint8_t *buf, uint16_t len)
+void hexdump(char* prefix, uint8_t *buf, uint16_t len)
 {
 	int i;
 	printf("\n<%s: ", prefix);
@@ -333,27 +327,4 @@ void scpi_glue_input(uint8_t *buf, uint16_t len, bool final)
 	if (final) {
 		SCPI_Input(&scpi_context, NULL, 0);
 	}
-}
-
-size_t scpi_impl_write(scpi_t *context, const char *data, size_t len)
-{
-	(void) context;
-	hexdump("scpi reply", (uint8_t *) data, len);
-	tmc_glue_send_data((uint8_t *) data, len);
-	return len;
-}
-
-int scpi_impl_error(scpi_t * context, int_fast16_t err)
-{
-	(void) context;
-	printf("**ERROR: %d, \"%s\"\r\n", err, SCPI_ErrorTranslate(err));
-	return 0;
-}
-
-scpi_result_t scpi_impl_reset(scpi_t *context)
-{
-	(void) context;
-	/* TODO could do a full system reset here? */
-	printf("Result handler got called!\n");
-	return SCPI_RES_OK;
 }

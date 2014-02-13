@@ -91,7 +91,7 @@ int main(void)
 
 	usart_init(115200);
 	usb_tmc_init(&usbd_dev);
-	scpi_init();
+	scpi_init_platform();
 	funcgen_init_arch();
 	printf("Disco non stop TMC!\n");
 
