@@ -8,25 +8,25 @@ CND_BUILDDIR=build
 CND_DISTDIR=dist
 # Debug configuration
 CND_PLATFORM_Debug=GNU-Linux-x86
-CND_ARTIFACT_DIR_Debug=dist/Debug/GNU-Linux-x86
-CND_ARTIFACT_NAME_Debug=disco-host-tests
-CND_ARTIFACT_PATH_Debug=dist/Debug/GNU-Linux-x86/disco-host-tests
+CND_ARTIFACT_DIR_Debug=build/Debug/GNU-Linux-x86/tests/TestFiles
+CND_ARTIFACT_NAME_Debug=f2
+CND_ARTIFACT_PATH_Debug=build/Debug/GNU-Linux-x86/tests/TestFiles/f2
 CND_PACKAGE_DIR_Debug=dist/Debug/GNU-Linux-x86/package
 CND_PACKAGE_NAME_Debug=disco-host-tests.tar
 CND_PACKAGE_PATH_Debug=dist/Debug/GNU-Linux-x86/package/disco-host-tests.tar
 # Release configuration
 CND_PLATFORM_Release=GNU-Linux-x86
-CND_ARTIFACT_DIR_Release=dist/Release/GNU-Linux-x86
-CND_ARTIFACT_NAME_Release=disco-host-tests
-CND_ARTIFACT_PATH_Release=dist/Release/GNU-Linux-x86/disco-host-tests
+CND_ARTIFACT_DIR_Release=build/Release/GNU-Linux-x86/tests/TestFiles
+CND_ARTIFACT_NAME_Release=f2
+CND_ARTIFACT_PATH_Release=build/Release/GNU-Linux-x86/tests/TestFiles/f2
 CND_PACKAGE_DIR_Release=dist/Release/GNU-Linux-x86/package
 CND_PACKAGE_NAME_Release=disco-host-tests.tar
 CND_PACKAGE_PATH_Release=dist/Release/GNU-Linux-x86/package/disco-host-tests.tar
 # test configuration
 CND_PLATFORM_test=GNU-Linux-x86
-CND_ARTIFACT_DIR_test=dist/test/GNU-Linux-x86
-CND_ARTIFACT_NAME_test=disco-host-tests
-CND_ARTIFACT_PATH_test=dist/test/GNU-Linux-x86/disco-host-tests
+CND_ARTIFACT_DIR_test=build/test/GNU-Linux-x86/tests/TestFiles
+CND_ARTIFACT_NAME_test=f2
+CND_ARTIFACT_PATH_test=build/test/GNU-Linux-x86/tests/TestFiles/f2
 CND_PACKAGE_DIR_test=dist/test/GNU-Linux-x86/package
 CND_PACKAGE_NAME_test=disco-host-tests.tar
 CND_PACKAGE_PATH_test=dist/test/GNU-Linux-x86/package/disco-host-tests.tar
