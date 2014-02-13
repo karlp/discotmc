@@ -95,12 +95,12 @@ static const struct usb_config_descriptor config = {
 	.interface = ifaces,
 };
 
-char serial_number[9];
+static char _our_serial_number[9];
 
 static const char *usb_strings[] = {
 	"libopencm3",
 	"usbtmc sample",
-	serial_number,
+	_our_serial_number,
 	"DEMO",
 };
 
@@ -114,30 +114,6 @@ static const struct usb_tmc_get_capabilities_response capabilities = {
 	.device_capabilities = 0
 };
 
-static void load_serial_number(char *snum) {
-	/*
-	 * Also, load up a serial number from the device unique id field.
-	 * The CRC unit in the stm32 is pretty bogus, but it will work for us,
-	 * as we don't actually need to share the crc with anyone else, we're
-	 * just using it as a hash function on the uniqueid
-	 */
-	rcc_periph_clock_enable(RCC_CRC);
-	uint32_t hashed_serial;
-	crc_reset();
-	crc_calculate(DESIG_UNIQUE_ID0);
-	crc_calculate(DESIG_UNIQUE_ID1);
-	hashed_serial = crc_calculate(DESIG_UNIQUE_ID2);
-	for (int i = 0; i < 8; i++) {
-		int c = (hashed_serial >> (i * 4)) & 0xf;
-		if (c > 9) {
-			snum[i] = c + 'A' - 10;
-		} else {
-			snum[i] = c + '0';
-		}
-	}
-	snum[9] = '\0';
-}
-
 void usb_tmc_setup_pre_arch(void)
 {
 	rcc_periph_clock_enable(RCC_GPIOA);
@@ -146,8 +122,6 @@ void usb_tmc_setup_pre_arch(void)
 	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE,
 		GPIO9 | GPIO11 | GPIO12);
 	gpio_set_af(GPIOA, GPIO_AF10, GPIO9 | GPIO11 | GPIO12);
-
-	load_serial_number(serial_number);
 }
 
 void usb_tmc_setup_post_arch(void)
@@ -296,8 +270,9 @@ void tmc_glue_send_data(uint8_t *buf, size_t len) {
 	output_buffer_idx += len;
 }
 
-void usb_tmc_init(usbd_device **usbd_dev)
+void usb_tmc_init(usbd_device **usbd_dev, const char *serial_number)
 {
+	strcpy(_our_serial_number, serial_number);
 	usb_tmc_setup_pre_arch();
 
 	// 4 == ARRAY_LENGTH(usb_strings)

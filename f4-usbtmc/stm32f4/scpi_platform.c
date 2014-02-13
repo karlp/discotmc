@@ -35,6 +35,7 @@ scpi_interface_t scpi_interface = {
 };
 
 
-void scpi_init_platform(void) {
-	dscpi_init(&scpi_interface);
+void scpi_init_platform(char *serial_number) {
+	/* gross having to pass this down twice.  must be a better way.... */
+	dscpi_init(&scpi_interface, serial_number);
 }

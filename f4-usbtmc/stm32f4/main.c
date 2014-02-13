@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <libopencm3/cm3/nvic.h>
+#include <libopencm3/stm32/crc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/usart.h>
@@ -79,6 +80,32 @@ int _write(int file, char *ptr, int len)
 	return -1;
 }
 
+static void load_serial_number(char *snum) {
+	/*
+	 * Also, load up a serial number from the device unique id field.
+	 * The CRC unit in the stm32 is pretty bogus, but it will work for us,
+	 * as we don't actually need to share the crc with anyone else, we're
+	 * just using it as a hash function on the uniqueid
+	 */
+	rcc_periph_clock_enable(RCC_CRC);
+	uint32_t hashed_serial;
+	crc_reset();
+	crc_calculate(DESIG_UNIQUE_ID0);
+	crc_calculate(DESIG_UNIQUE_ID1);
+	hashed_serial = crc_calculate(DESIG_UNIQUE_ID2);
+	for (int i = 0; i < 8; i++) {
+		int c = (hashed_serial >> (i * 4)) & 0xf;
+		if (c > 9) {
+			snum[i] = c + 'A' - 10;
+		} else {
+			snum[i] = c + '0';
+		}
+	}
+	snum[9] = '\0';
+}
+
+
+
 int main(void)
 {
 	usbd_device *usbd_dev;
@@ -90,8 +117,11 @@ int main(void)
 		LED_RX_PIN | LED_TX_PIN | LED_PULSE_PIN);
 
 	usart_init(115200);
-	usb_tmc_init(&usbd_dev);
-	scpi_init_platform();
+	char our_serial[9];
+	load_serial_number(our_serial);
+
+	usb_tmc_init(&usbd_dev, our_serial);
+	scpi_init_platform(our_serial);
 	funcgen_init_arch();
 	printf("Disco non stop TMC!\n");
 

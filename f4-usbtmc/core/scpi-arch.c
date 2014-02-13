@@ -296,12 +296,13 @@ static scpi_t scpi_context = {
 	.units = scpi_units_def,
 	.special_numbers = scpi_special_numbers_def,
 	.idn =
-	{"Ekta labs", "DiscoTMC-F4", serial_number, "0.1"},
+	{"Ekta labs", "DiscoTMC-F4", NULL, "0.1"},
 };
 
-void dscpi_init(scpi_interface_t *intf)
+void dscpi_init(scpi_interface_t *intf, char *serial_number)
 {
 	scpi_context.interface = intf;
+	scpi_context.idn[2] = serial_number;
 	SCPI_Init(&scpi_context);
 }
 
