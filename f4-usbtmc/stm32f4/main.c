@@ -122,7 +122,7 @@ int main(void)
 
 	usb_tmc_init(&usbd_dev, our_serial);
 	scpi_init_platform(our_serial);
-	funcgen_init_arch();
+	funcgen_plat_init();
 	printf("Disco non stop TMC!\n");
 
 	while (1) {

@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <scpi/scpi.h>
 #include "scpi-arch.h"
-#include "../stm32f4/usb_tmc.h"  // TODO extract serial numbe rout of this stuff
 #include "funcgen.h"
 
 static char numbuf[100]; // for printing numbers with units

@@ -18,6 +18,7 @@
 BINARY = main
 #OBJS += usb_cdcacm.o usb_cdcacm-arch.o
 OBJS += usb_tmc.o scpi-arch.o funcgen.o scpi_platform.o
+OBJS += funcgen-plat.o
 CFLAGS += -std=c99 -ggdb3
 CFLAGS+=-I../core -I../../scpi-parser/libscpi/inc
 LDFLAGS+=-L../../scpi-parser/libscpi/dist/arm-none-eabi

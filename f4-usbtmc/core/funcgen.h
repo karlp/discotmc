@@ -8,6 +8,8 @@
 #ifndef FUNCGEN_H
 #define	FUNCGEN_H
 
+#include <stdbool.h>
+
 #ifdef	__cplusplus
 extern "C" {
 #endif
@@ -23,12 +25,12 @@ extern "C" {
 		OUTPUT_MODE_USER,
 		OUTPUT_MODE_NULL,
 	};
-	
+
 	struct _output_mode {
 		const char * name;
 		enum _funcgen_output_mode mode;
 	};
-	
+
 	struct funcgen_output_t {
 		bool enabled;
 		/* In volts, p2p */
@@ -45,10 +47,9 @@ extern "C" {
 	};
 
 	struct funcgen_state_t {
-		struct funcgen_output_t  *outputs[2];
+		struct funcgen_output_t *outputs[2];
 	};
 
-	void funcgen_init_arch(void);
 	/* gross api! */
 	void funcgen_sin(int channel, float frequency, float ampl, float offset);
 	void funcgen_square(int channel, float frequency, float ampl, float offset);
@@ -56,6 +57,12 @@ extern "C" {
 	void funcgen_output(int channel, bool enable);
 	struct funcgen_state_t * funcgen_getstate(void);
 
+	/* platform must provide these routines */
+	void funcgen_plat_init(void);
+	void funcgen_plat_timer_setup(int channel, int period_us);
+	void funcgen_plat_dac_setup(int channel);
+	void funcgen_plat_dma_setup(int channel, const uint16_t *wave_table, int wave_table_count);
+	void funcgen_plat_output(int channel, bool enable);
 
 #ifdef	__cplusplus
 }
