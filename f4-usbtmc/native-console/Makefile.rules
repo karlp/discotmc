@@ -1,0 +1,92 @@
+V?=1
+ifneq ($(V),1)
+Q		:= @
+NULL		:= 2>/dev/null
+endif
+
+###############################################################################
+# Executables
+
+CC		:= $(PREFIX)gcc
+CXX		:= $(PREFIX)g++
+LD		:= $(PREFIX)gcc
+AR		:= $(PREFIX)ar
+AS		:= $(PREFIX)as
+OBJCOPY		:= $(PREFIX)objcopy
+OBJDUMP		:= $(PREFIX)objdump
+GDB		:= $(PREFIX)gdb
+
+
+###############################################################################
+# Source files
+
+OBJS		+= $(BINARY).o
+
+###############################################################################
+# C flags
+
+CFLAGS		+= -Wextra -Wshadow -Wimplicit-function-declaration
+CFLAGS		+= -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes
+CFLAGS		+= -fno-common -ffunction-sections -fdata-sections
+
+###############################################################################
+# C++ flags
+
+CXXFLAGS	+= -Wextra -Wshadow -Wredundant-decls  -Weffc++
+CXXFLAGS	+= -fno-common -ffunction-sections -fdata-sections
+
+###############################################################################
+# C & C++ preprocessor common flags
+
+CPPFLAGS	+= -MD
+CPPFLAGS	+= -Wall -Wundef
+CPPFLAGS	+= $(DEFS)
+
+###############################################################################
+# Linker flags
+
+# nothing special...
+
+###############################################################################
+# Used libraries
+
+#LDLIBS		+= -lblah
+# Nothing special
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+.SUFFIXES: .elf
+.SECONDEXPANSION:
+.SECONDARY:
+
+all: images
+
+images: $(BINARY).elf
+
+
+%.elf: $(OBJS)
+	@#printf "  LD      $(*).elf\n"
+	$(Q)$(LD) $(LDFLAGS) $(ARCH_FLAGS) $(OBJS) $(LDLIBS) -o $(*).elf
+
+%.o: %.c
+	@#printf "  CC      $(*).c\n"
+	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) $(ARCH_FLAGS) -o $@ -c $<
+
+%.o: %.cxx
+	@#printf "  CXX     $(*).cxx\n"
+	$(Q)$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(ARCH_FLAGS) -o $@ -c $<
+
+%.o: %.cpp
+	@#printf "  CXX     $(*).cpp\n"
+	$(Q)$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(ARCH_FLAGS) -o $@ -c $<
+
+clean:
+	@#printf "  CLEAN\n"
+	$(Q)$(RM) *.o *.d *.elf
+
+
+.PHONY: clean
+
+-include $(OBJS:.o=.d)

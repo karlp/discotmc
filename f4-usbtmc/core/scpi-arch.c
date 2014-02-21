@@ -305,6 +305,11 @@ void dscpi_init(scpi_interface_t *intf, char *serial_number)
 	SCPI_Init(&scpi_context);
 }
 
+scpi_t * dscpi_get_context(void)
+{
+	return &scpi_context;
+}
+
 void hexdump(char* prefix, uint8_t *buf, uint16_t len)
 {
 	int i;

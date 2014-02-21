@@ -62,18 +62,19 @@ static void calculate_output(const uint16_t *source, int source_len,
 
 void funcgen_sin(int channel, float frequency, float ampl, float offset) {
 	uint16_t *wavedata = state.outputs[channel]->waveform;
+	int dest_len = ARRAY_LENGTH(state.outputs[channel]->waveform);
 	
 	/* Take the input wave and calculate the wavetable for DMA */
-	calculate_output(lut_sine, ARRAY_LENGTH(lut_sine), wavedata, ARRAY_LENGTH(wavedata),
-		ampl, offset);
+	calculate_output(lut_sine, ARRAY_LENGTH(lut_sine), wavedata, dest_len, ampl, offset);
+	//calculate_output(lut_sine, 32, wavedata, FUNCGEN_WAVE_SIZE, ampl, offset);
 
 	int usecs_per_wave = 1000000 / frequency;
-	int sample_period_us = usecs_per_wave / ARRAY_LENGTH(wavedata);
+	int sample_period_us = usecs_per_wave / dest_len;
 	printf("Requested freq: %f, usecs/wave: %d, timerusec: %d\n", frequency, usecs_per_wave, sample_period_us);
 	
 	/*+++ hardware setup +++*/
 	funcgen_plat_timer_setup(channel, sample_period_us);
-	funcgen_plat_dma_setup(channel, wavedata, ARRAY_LENGTH(wavedata));
+	funcgen_plat_dma_setup(channel, wavedata, dest_len);
 	funcgen_plat_dac_setup(channel);
 	/*++++++++++++++++++++++*/
 	
