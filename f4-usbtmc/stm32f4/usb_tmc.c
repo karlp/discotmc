@@ -15,7 +15,7 @@
 #include "syscfg.h"
 #include "tmc.h"
 #include "usb_tmc.h"
-#include "scpi-arch.h"
+#include "dscpi.h"
 
 /* Buffer to be used for control requests. */
 uint8_t usbd_control_buffer[128];

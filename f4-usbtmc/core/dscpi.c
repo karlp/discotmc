@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <scpi/scpi.h>
-#include "scpi-arch.h"
+#include "dscpi.h"
 #include "funcgen.h"
 
 static char numbuf[100]; // for printing numbers with units

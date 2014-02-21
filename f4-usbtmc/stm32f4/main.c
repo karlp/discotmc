@@ -28,7 +28,7 @@
 
 #include "syscfg.h"
 #include "usb_tmc.h"
-#include "scpi-arch.h"
+#include "dscpi.h"
 #include "funcgen.h"
 
 int _write(int file, char *ptr, int len);

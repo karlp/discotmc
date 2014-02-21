@@ -47,7 +47,7 @@
 #include <arpa/inet.h>
 
 #include <scpi/scpi.h>
-#include "scpi-arch.h"
+#include "dscpi.h"
 #include "funcgen.h"
 
 

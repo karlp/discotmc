@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
-#include "../core/scpi-arch.h"
+#include "../core/dscpi.h"
 #include "usb_tmc.h"
 
 size_t scpi_impl_write(scpi_t *context, const char *data, size_t len)

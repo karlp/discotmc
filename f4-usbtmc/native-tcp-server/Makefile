@@ -16,8 +16,11 @@
 ##
 
 BINARY = main
-OBJS += scpi-arch.o funcgen.o
+# Core objects
+OBJS += dscpi.o funcgen.o
+# Platform objects
 OBJS += scpi_platform_tcp.o funcgen-plat.o
+
 CFLAGS += -std=c99 -ggdb3
 CFLAGS+=-I../core -I../../scpi-parser/libscpi/inc
 LDFLAGS+=-L../../scpi-parser/libscpi/dist/x86_64-redhat-linux/
