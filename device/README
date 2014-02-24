@@ -1,0 +1,12 @@
+------------------------------------------------------------------------------
+README
+------------------------------------------------------------------------------
+This is the main core application.  It contains the core SCPI parsing and
+wave table generation code, and two (currently) platforms,
+ * stm32f4 discovery board - The primary target, USB-TMC interface
+ * "native" - this is helpful for testing the core code, provides a TCP
+   server that understands SCPI commands.
+
+This example implements a USB combo device, with a USB TMC, and USB CDC-ACM
+device.
+ 
