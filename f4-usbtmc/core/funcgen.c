@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "funcgen.h"
 
@@ -52,10 +53,13 @@ static void calculate_output(const uint16_t *source, int source_len,
 	uint16_t *dest, int dest_len,
 	float ampl, float offset)
 {
-	float step = (source_len - 1) / (dest_len - 1) * 1.0;
+	float nom = source_len - 1;
+	float denom = dest_len - 1;
+	float step = nom / denom;
+	float offset_bits = offset / FULL_SCALE * 4095;
+	offset_bits += ampl / 2.0;  /* centered please! */
 	for (int i = 0; i < dest_len; i++) {
 		float si = interp1(i*step, source, source_len);
-		float offset_bits = offset / FULL_SCALE * 4095;
 		dest[i] = si * ampl / FULL_SCALE + offset_bits;
 	}
 }
@@ -68,12 +72,12 @@ void funcgen_sin(int channel, float frequency, float ampl, float offset) {
 	calculate_output(lut_sine, ARRAY_LENGTH(lut_sine), wavedata, dest_len, ampl, offset);
 	//calculate_output(lut_sine, 32, wavedata, FUNCGEN_WAVE_SIZE, ampl, offset);
 
-	int usecs_per_wave = 1000000 / frequency;
-	int sample_period_us = usecs_per_wave / dest_len;
-	printf("Requested freq: %f, usecs/wave: %d, timerusec: %d\n", frequency, usecs_per_wave, sample_period_us);
+	float usecs_per_wave = 1000000 / frequency;
+	int nanos_per_sample = ceil(1000 * usecs_per_wave / (dest_len * 1.0));
+	printf("Requested freq: %f, usecs/wave: %f, timer nsecs: %d\n", frequency, usecs_per_wave, nanos_per_sample);
 	
 	/*+++ hardware setup +++*/
-	funcgen_plat_timer_setup(channel, sample_period_us);
+	funcgen_plat_timer_setup(channel, nanos_per_sample);
 	funcgen_plat_dma_setup(channel, wavedata, dest_len);
 	funcgen_plat_dac_setup(channel);
 	/*++++++++++++++++++++++*/

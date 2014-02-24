@@ -9,7 +9,7 @@
 #include "../core/funcgen.h"
 
 
-void funcgen_plat_timer_setup(int channel, int period_us) {
+void funcgen_plat_timer_setup(int channel, int period_ns) {
 	uint32_t timer;
 	switch (channel) {
 	case 1: timer = TIM7;
@@ -23,15 +23,21 @@ void funcgen_plat_timer_setup(int channel, int period_us) {
 	// APB is maxed at 42Mhz, so APB timers run at 84Mhz
 	// dac says 1msps max max, so at 1msps, we want a period of what, 1 Mhz _overflows_
 	// so at least 2 Mhz clock..., let's say 4 Mhz timer clock for max res stuff
-	if (period_us < 4000) {
-		timer_set_prescaler(timer, 20);  // 84MHz / 4MHz - 1 => ticks at 0.25usec
-		timer_set_period(timer, (period_us * 4) - 1);
-	} else {
-		printf("out of range period request: %d", period_us);
+	// want to run the clock pretty quick, let's say 50ns steps or so at the bottom end,
+	// at ~24Mhz or similar, 
+	// this is _F4_ specific!
+	/* two ranges is probably su*/
+	if (period_ns > 50) {
+		timer_set_prescaler(timer, 3); // 84 / 21 - 1 ticks at ~48ns
+		timer_set_period(timer, (period_ns / 48) - 1);
+	}
+	if (period_ns * 50 > 0x6000) {
+		/* don't even try and run that fast with this slow a wave */
+		timer_set_prescaler(timer, 83); // 1Mhz (84/1 - 1) ticks at 1usecs
+		timer_set_period((period_ns / 1000) - 1);
 	}
 
 	timer_enable_irq(timer, TIM_DIER_UIE);
-
 	timer_set_master_mode(timer, TIM_CR2_MMS_UPDATE);
 	timer_enable_counter(timer);
 }

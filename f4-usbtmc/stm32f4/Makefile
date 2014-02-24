@@ -25,7 +25,7 @@ CFLAGS += -std=c99 -ggdb3
 CFLAGS+=-I../core -I../../scpi-parser/libscpi/inc
 LDFLAGS+=-L../../scpi-parser/libscpi/dist/arm-none-eabi
 LDFLAGS+= --specs=nano.specs
-LDLIBS+=-lscpi
+LDLIBS+=-lscpi -lm
 
 VPATH += ../core
 

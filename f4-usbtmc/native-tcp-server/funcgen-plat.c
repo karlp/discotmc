@@ -2,9 +2,9 @@
 
 #include "../core/funcgen.h"
 
-void funcgen_plat_timer_setup(int channel, int period_us)
+void funcgen_plat_timer_setup(int channel, int period_ns)
 {
-	printf("FUNCGEN:NULL:timer_setup channel: %d, period_us: %d\n", channel, period_us);
+	printf("FUNCGEN:NULL:timer_setup channel: %d, period_ns: %d\n", channel, period_ns);
 }
 
 void funcgen_plat_dma_setup(int channel, const uint16_t *wave_table, int wave_table_count)
