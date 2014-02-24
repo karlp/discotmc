@@ -18,6 +18,9 @@ make -C f4-usbtmc
 make -C f4-usbtmc flash  # assumes openocd installed and operational
 ```
 
+This has some basic support for operating both on the host (as a TCP server)
+and on the F4 as a USB device.
+
 host side
 =========
 ```
