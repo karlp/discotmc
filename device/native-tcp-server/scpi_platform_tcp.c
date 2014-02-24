@@ -1,6 +1,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include "../core/dscpi.h"
 
@@ -22,9 +23,14 @@ scpi_result_t scpi_impl_flush(scpi_t * context)
 
 int scpi_impl_error(scpi_t * context, int_fast16_t err)
 {
-	(void) context;
-	// BEEP
-	fprintf(stderr, "**ERROR: %d, \"%s\"\r\n", (int32_t) err, SCPI_ErrorTranslate(err));
+	/* print to dev console, but also return it... */
+	char errbuf[1024];
+	sprintf(errbuf, "**ERROR: %d, \"%s\"\r\n", (int32_t) err, SCPI_ErrorTranslate(err));
+	fputs(errbuf, stderr);
+	if (context->user_context != NULL) {
+		int fd = *(int *) (context->user_context);
+		return write(fd, errbuf, strlen(errbuf));
+	}
 	return 0;
 }
 
