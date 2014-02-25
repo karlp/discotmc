@@ -48,12 +48,15 @@ void funcgen_plat_dma_setup(int channel, const uint16_t *wave_table, int wave_ta
 	/* DAC channel 1 uses DMA controller 1 Stream 5 Channel 7. */
 	/* DAC channel 2 uses DMA controller 1 Stream 6 Channel 7. */
 	int stream;
+	uint32_t daddr;
 	switch (channel) {
 	case CHANNEL_2:
 		stream = DMA_STREAM6;
+		daddr = (uint32_t) & DAC_DHR12R2;
 		break;
 	default:
 	case CHANNEL_1:
+		daddr = (uint32_t) & DAC_DHR12R1;
 		stream = DMA_STREAM5;
 		break;
 	}
@@ -70,7 +73,7 @@ void funcgen_plat_dma_setup(int channel, const uint16_t *wave_table, int wave_ta
 	dma_enable_circular_mode(DMA1, stream);
 	dma_set_transfer_mode(DMA1, stream, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
 	/* TODO - _can_ use DAC_DHR12RD if we've got both channels active! */
-	dma_set_peripheral_address(DMA1, stream, (uint32_t) & DAC_DHR12R1);
+	dma_set_peripheral_address(DMA1, stream, daddr);
 	dma_set_memory_address(DMA1, stream, (uint32_t) wave_table);
 	dma_set_number_of_data(DMA1, stream, wave_table_count);
 	/* DAC is channel 7 for both dacs */
