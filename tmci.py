@@ -15,4 +15,4 @@ def do_one(args):
 
 if __name__ == "__main__":
     print("Operating with instrument: %s" % instr.ask("*IDN?"))
-    do_one(sys.argv)
+    do_one(sys.argv[1:])
