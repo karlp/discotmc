@@ -31,11 +31,11 @@ void funcgen_plat_timer_setup(int channel, int period_ns) {
 		timer_set_prescaler(timer, 3); // 84 / 21 - 1 ticks at ~48ns
 		timer_set_period(timer, (period_ns / 48) - 1);
 	}
-	if (period_ns * 50 > 0x6000) {
-		/* don't even try and run that fast with this slow a wave */
-		timer_set_prescaler(timer, 83); // 1Mhz (84/1 - 1) ticks at 1usecs
-		timer_set_period((period_ns / 1000) - 1);
-	}
+//	if (period_ns * 50 > 0x6000) {
+//		/* don't even try and run that fast with this slow a wave */
+//		timer_set_prescaler(timer, 83); // 1Mhz (84/1 - 1) ticks at 1usecs
+//		timer_set_period(timer, (period_ns / 1000) - 1);
+//	}
 
 	timer_enable_irq(timer, TIM_DIER_UIE);
 	timer_set_master_mode(timer, TIM_CR2_MMS_UPDATE);
