@@ -3,6 +3,11 @@ This is a usbtmc 2 channel function generator on an stm32F4 discovery board.
 Bandwidth and all that sort of stuff is limited, we're using the onboard DAC,
 but the flexibility can't be beat.
 
+Current status:
+* dual channel sine wave output, 1hz-20khz.
+  (granularity is terrible above ~4kHz, but that's fixable)
+* still bugs in usb comms, need to reset the board far too often.
+
 getting started....
 
 ```
