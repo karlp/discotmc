@@ -5,6 +5,8 @@
 #include <libopencm3/usb/usbstd.h>
 
 #include <libopencm3/cm3/nvic.h>
+#include <libopencm3/stm32/crc.h>
+#include <libopencm3/stm32/desig.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/usb/usbd.h>
@@ -13,7 +15,7 @@
 #include "syscfg.h"
 #include "tmc.h"
 #include "usb_tmc.h"
-#include "scpi-arch.h"
+#include "dscpi.h"
 
 /* Buffer to be used for control requests. */
 uint8_t usbd_control_buffer[128];
@@ -93,10 +95,12 @@ static const struct usb_config_descriptor config = {
 	.interface = ifaces,
 };
 
+static char _our_serial_number[9];
+
 static const char *usb_strings[] = {
 	"libopencm3",
 	"usbtmc sample",
-	"none",
+	_our_serial_number,
 	"DEMO",
 };
 
@@ -118,7 +122,6 @@ void usb_tmc_setup_pre_arch(void)
 	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE,
 		GPIO9 | GPIO11 | GPIO12);
 	gpio_set_af(GPIOA, GPIO_AF10, GPIO9 | GPIO11 | GPIO12);
-
 }
 
 void usb_tmc_setup_post_arch(void)
@@ -267,8 +270,9 @@ void tmc_glue_send_data(uint8_t *buf, size_t len) {
 	output_buffer_idx += len;
 }
 
-void usb_tmc_init(usbd_device **usbd_dev)
+void usb_tmc_init(usbd_device **usbd_dev, const char *serial_number)
 {
+	strcpy(_our_serial_number, serial_number);
 	usb_tmc_setup_pre_arch();
 
 	// 4 == ARRAY_LENGTH(usb_strings)

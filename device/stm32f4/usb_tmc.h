@@ -17,9 +17,7 @@
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * This is the header file for a usb_cdcacm implmentation, usb_cdcacm.c is the
- * platform independent portion, and usb_cdcacm-arch.c should be re-implemented
- * for other platforms.
+ * XXXXX
  */
 
 #ifndef USB_CDCACM_H
@@ -30,21 +28,22 @@ extern "C" {
 #endif
 
 #include <libopencm3/usb/usbd.h>
-#include <libopencm3/usb/cdc.h>
+	
+	struct  __attribute__ ((packed))  usb_tmc_get_capabilities_response {
+		uint8_t USBTMC_status;
+		uint8_t reserved0;
+		uint16_t bcdUSBTMC;
+		uint8_t interface_capabilities;  /* bitmap! */
+		uint8_t device_capabilities;  /* bitmap! */
+		uint8_t reserved1[6];
+		uint8_t reserved_subclass[12];
+		
+	};
 
-	void usb_cdcacm_init(usbd_device **usb_dev);
-	void usb_cdcacm_setup_pre_arch(void);
-	void usb_cdcacm_setup_post_arch(void);
-
-	/* Call this if you have data to send to the usb host */
-	void glue_data_received_cb(uint8_t *buf, uint16_t len);
-	/* These will be called by usb_cdcacm code */
-	void glue_send_data_cb(uint8_t *buf, uint16_t len);
-
-	void glue_set_line_state_cb(uint8_t dtr, uint8_t rts);
-	int glue_set_line_coding_cb(uint32_t baud, uint8_t databits,
-		enum usb_cdc_line_coding_bParityType cdc_parity,
-		enum usb_cdc_line_coding_bCharFormat cdc_stopbits);
+	void usb_tmc_init(usbd_device **usb_dev, const char *serial_number);
+	void usb_tmc_setup_pre_arch(void);
+	void usb_tmc_setup_post_arch(void);
+	void tmc_glue_send_data(uint8_t *buf, size_t len);
 
 #ifdef	__cplusplus
 }

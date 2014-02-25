@@ -1,0 +1,12 @@
+------------------------------------------------------------------------------
+README
+------------------------------------------------------------------------------
+
+This is the stm32f4discovery targetting discotmc platform.
+
+It provides a USB-TMC interface to the host, which accepts SCPI commands as
+usual, and allows controlling the DAC channels of the stm32.
+
+In addition, some debug and trace is dumped to the uart on PA2/PA3 at
+115200/8n1
+

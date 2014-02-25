@@ -16,13 +16,17 @@
 ##
 
 BINARY = main
-#OBJS += usb_cdcacm.o usb_cdcacm-arch.o
-OBJS += usb_tmc.o scpi-arch.o funcgen.o
-CFLAGS+=-I../scpi-parser/libscpi/inc
-LDFLAGS+=-L../scpi-parser/libscpi/dist/arm-none-eabi
-LDLIBS+=-lscpi
+# Core objects
+OBJS += dscpi.o funcgen.o
+# Platform objects
+OBJS += scpi_platform_tcp.o funcgen-plat.o
 
-LDSCRIPT = ../stm32f4-discovery.ld
+CFLAGS += -std=c99 -ggdb3
+CFLAGS+=-I../core -I../../scpi-parser/libscpi/inc
+LDFLAGS+=-L../../scpi-parser/libscpi/dist/x86_64-redhat-linux/
+LDLIBS+=-lscpi -lm
 
-include Makefile.include
+VPATH += ../core
 
+
+include Makefile.rules

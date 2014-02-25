@@ -14,9 +14,12 @@ Device firmware portion
 ```
 make -C libopencm3
 make -C scpi-parser/libscpi
-make -C f4-usbtmc
-make -C f4-usbtmc flash  # assumes openocd installed and operational
+make -C device/stm32f4
+make -C device/stm32f4 flash  # assumes openocd installed and operational
 ```
+
+See device/native-tcp-server for a host build of the core functionality. (No
+DAC, but all the wavetable generation and SCPI parsing code can be tested)
 
 host side
 =========

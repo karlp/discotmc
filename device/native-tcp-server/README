@@ -1,0 +1,4 @@
+This runs a tcp server, which is just a somewhat nice way of having
+the SCPI interface in one place, and whatever console debug I want in another
+place.  It's largely based on the scpi-parser test-tcp example code.
+
