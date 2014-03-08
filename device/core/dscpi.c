@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <scpi/scpi.h>
+#include <string.h>
 #include "dscpi.h"
 #include "funcgen.h"
 
@@ -52,9 +53,12 @@ scpi_command_t scpi_commands[] = {
 	{ .pattern = "SOUR2:APPLy?", .callback = dscpi_apply2Q,},
 	{ .pattern = "DATA1:DAC", .callback = dscpi_data_dac1,},
 	{ .pattern = "DATA2:DAC", .callback = dscpi_data_dac2,},
-	/* Why this isn't DATA[1|2]:DAC? I don't know...*/
+	/* gwinstek queries dac data this way?!*/
 	{ .pattern = "SOUR1:ARB:OUTPut", .callback = dscpi_data_dac1Q,},
 	{ .pattern = "SOUR2:ARB:OUTPut", .callback = dscpi_data_dac2Q,},
+        /* support sane ? forms too*/
+	{ .pattern = "DATA1:DAC?", .callback = dscpi_data_dac1Q,},
+	{ .pattern = "DATA2:DAC?", .callback = dscpi_data_dac2Q,},
 
 	SCPI_CMD_LIST_END
 };
@@ -238,11 +242,17 @@ scpi_result_t dscpi_apply2Q(scpi_t *context)
 /* DATA:DAC */
 static scpi_result_t dscpi_data_dac_inner(scpi_t *context, int channel)
 {
-	// TODO
-	(void) context;
+	const void *raw_arg;
 	struct funcgen_output_t *fo = funcgen_getstate()->outputs[channel];
-	(void) fo;
-	return SCPI_RES_ERR;
+	size_t outlen;
+
+	if (!SCPI_ParamBinary(context, &raw_arg, &outlen, true)) {
+		return SCPI_RES_ERR;
+	} else {
+		memcpy(fo->waveform, raw_arg, outlen);
+		fo->waveform_length = outlen / sizeof(fo->waveform[0]);
+		return SCPI_RES_OK;
+	}
 }
 
 scpi_result_t dscpi_data_dac1(scpi_t *context)
@@ -258,11 +268,9 @@ scpi_result_t dscpi_data_dac2(scpi_t *context)
 /* SOURx:OUTP:ARB x,y (DATA:DAC?) */
 static scpi_result_t dscpi_data_dacQ_inner(scpi_t *context, int channel)
 {
-	// TODO
-	(void) context;
 	struct funcgen_output_t *fo = funcgen_getstate()->outputs[channel];
-	(void) fo;
-	return SCPI_RES_ERR;
+        SCPI_ResultBinary(context, (const char *)fo->waveform, fo->waveform_length * sizeof(fo->waveform[0]));
+	return SCPI_RES_OK;
 }
 
 scpi_result_t dscpi_data_dac1Q(scpi_t *context)

@@ -86,6 +86,8 @@ void funcgen_sin(int channel, float frequency, float ampl, float offset) {
 	state.outputs[channel]->freq = frequency;
 	state.outputs[channel]->ampl = ampl;
 	state.outputs[channel]->offset = offset;
+	/* we're not doing any tricks on variable lengths for better frequency control at the moment */
+	state.outputs[channel]->waveform_length = dest_len;
 }
 
 void funcgen_output(int channel, bool enable)
