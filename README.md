@@ -6,6 +6,7 @@ but the flexibility can't be beat.
 Current status:
 * dual channel sine wave output, 1hz-20khz.
   (granularity is terrible above ~4kHz, but that's fixable)
+* Load arbitrary data and output. (lots of bugs in data bigger than usb frames)
 * still bugs in usb comms, need to reset the board far too often.
 
 getting started....

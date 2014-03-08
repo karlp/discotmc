@@ -82,6 +82,30 @@ void funcgen_sin(int channel, float frequency, float ampl, float offset) {
 	funcgen_plat_dac_setup(channel);
 	/*++++++++++++++++++++++*/
 	
+        state.outputs[channel]->mode = OUTPUT_MODE_SINE;
+	state.outputs[channel]->enabled = true;
+	state.outputs[channel]->freq = frequency;
+	state.outputs[channel]->ampl = ampl;
+	state.outputs[channel]->offset = offset;
+	/* we're not doing any tricks on variable lengths for better frequency control at the moment */
+	state.outputs[channel]->waveform_length = dest_len;
+}
+
+void funcgen_user(int channel, float frequency, float ampl, float offset) {
+        uint16_t *wavedata = state.outputs[channel]->waveform;
+	int dest_len = state.outputs[channel]->waveform_length;
+
+	float usecs_per_wave = 1000000 / frequency;
+	int nanos_per_sample = ceil(1000 * usecs_per_wave / (dest_len * 1.0));
+	printf("Requested freq: %f, usecs/wave: %f, timer nsecs: %d\n", frequency, usecs_per_wave, nanos_per_sample);
+
+	/*+++ hardware setup +++*/
+	funcgen_plat_timer_setup(channel, nanos_per_sample);
+	funcgen_plat_dma_setup(channel, wavedata, dest_len);
+	funcgen_plat_dac_setup(channel);
+	/*++++++++++++++++++++++*/
+
+        state.outputs[channel]->mode = OUTPUT_MODE_USER;
 	state.outputs[channel]->enabled = true;
 	state.outputs[channel]->freq = frequency;
 	state.outputs[channel]->ampl = ampl;

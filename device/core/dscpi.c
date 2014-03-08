@@ -22,6 +22,7 @@ scpi_result_t dscpi_apply_sin2(scpi_t *context);
 scpi_result_t dscpi_apply_sq1(scpi_t *context);
 scpi_result_t dscpi_apply_noise1(scpi_t *context);
 scpi_result_t dscpi_apply_user1(scpi_t *context);
+scpi_result_t dscpi_apply_user2(scpi_t *context);
 scpi_result_t dscpi_apply1Q(scpi_t *context);
 scpi_result_t dscpi_apply2Q(scpi_t *context);
 scpi_result_t dscpi_data_dac1(scpi_t *context);
@@ -48,7 +49,8 @@ scpi_command_t scpi_commands[] = {
 	{ .pattern = "SOUR2:APPLy:SINe", .callback = dscpi_apply_sin2,},
 	//		{ .pattern = "SOUR1:APPLy:SQUare", .callback = dscpi_apply_sq1,},
 	//		{ .pattern = "SOUR1:APPLy:NOISe", .callback = dscpi_apply_noise1,},
-	//		{ .pattern = "SOUR1:APPLy:USER", .callback = dscpi_apply_user1,},
+	{ .pattern = "SOUR1:APPLy:USER", .callback = dscpi_apply_user1,},
+	{ .pattern = "SOUR1:APPLy:USER", .callback = dscpi_apply_user2,},
 	{ .pattern = "SOUR1:APPLy?", .callback = dscpi_apply1Q,},
 	{ .pattern = "SOUR2:APPLy?", .callback = dscpi_apply2Q,},
 	{ .pattern = "DATA1:DAC", .callback = dscpi_data_dac1,},
@@ -56,7 +58,7 @@ scpi_command_t scpi_commands[] = {
 	/* gwinstek queries dac data this way?!*/
 	{ .pattern = "SOUR1:ARB:OUTPut", .callback = dscpi_data_dac1Q,},
 	{ .pattern = "SOUR2:ARB:OUTPut", .callback = dscpi_data_dac2Q,},
-        /* support sane ? forms too*/
+	/* support sane ? forms too*/
 	{ .pattern = "DATA1:DAC?", .callback = dscpi_data_dac1Q,},
 	{ .pattern = "DATA2:DAC?", .callback = dscpi_data_dac2Q,},
 
@@ -103,71 +105,81 @@ scpi_result_t dscpi_output2Q(scpi_t *context)
 	return dscpi_outputQ_inner(context, 1);
 }
 
+static int dscpi_apply_params(scpi_t *context,
+	scpi_number_t *freq, scpi_number_t *ampl, scpi_number_t *offset)
+{
+	if (!SCPI_ParamNumber(context, freq, false)) {
+		/* you can only get here if you gave it a bad pointer */
+		return -1;
+	} else {
+		if (freq->type == SCPI_NUM_DEF) {
+			freq->value = 1000;
+			freq->type = SCPI_NUM_NUMBER;
+			freq->unit = SCPI_UNIT_HERTZ;
+		}
+		if (freq->unit == SCPI_UNIT_NONE) {
+			freq->unit = SCPI_UNIT_HERTZ;
+		}
+		/* handle minimum, maximum, regular*/
+	}
+	if (!SCPI_ParamNumber(context, ampl, false)) {
+		/* bad pointers */
+		return -1;
+	} else {
+		if (ampl->type == SCPI_NUM_DEF) {
+			ampl->type = SCPI_NUM_NUMBER;
+			ampl->unit = SCPI_UNIT_VOLT;
+			ampl->value = 0.1; // 100 mV by default
+		}
+		if (ampl->type == SCPI_NUM_MIN) {
+			ampl->value = 0;
+		}
+		if (ampl->type == SCPI_NUM_MAX) {
+			ampl->value = FULL_SCALE;
+		}
+		if (ampl->unit == SCPI_UNIT_NONE) {
+			ampl->unit = SCPI_UNIT_VOLT;
+		}
+		/* handle minimum, maximum, */
+		/* TODO somehow work out how to handle Vrms units here ?*/
+	}
+	if (!SCPI_ParamNumber(context, offset, false)) {
+		/* bad pointers */
+		return -1;
+	} else {
+		if (offset->type == SCPI_NUM_DEF) {
+			offset->type = SCPI_NUM_NUMBER;
+			offset->unit = SCPI_UNIT_VOLT;
+			offset->value = FULL_SCALE / 2.0;
+		}
+		if (offset->type == SCPI_NUM_MIN) {
+			offset->value = 0;
+		}
+		if (offset->type == SCPI_NUM_MAX) {
+			offset->value = FULL_SCALE;
+		}
+		if (offset->unit == SCPI_UNIT_NONE) {
+			offset->unit = SCPI_UNIT_VOLT;
+		}
+	}
+#define FULL_DEBUG 1
+#if FULL_DEBUG
+	SCPI_NumberToStr(context, freq, numbuf, sizeof (numbuf));
+	printf("freq: %s", numbuf);
+	SCPI_NumberToStr(context, ampl, numbuf, sizeof (numbuf));
+	printf("ampl: %s", numbuf);
+	SCPI_NumberToStr(context, offset, numbuf, sizeof (numbuf));
+	printf("offset: %s", numbuf);
+#endif
+	return 0;
+}
+
 static int dscpi_apply_sin_inner(scpi_t *context, int output)
 {
 	scpi_number_t freq;
 	scpi_number_t ampl;
 	scpi_number_t offset;
-	if (!SCPI_ParamNumber(context, &freq, false)) {
-		/* you can only get here if you gave it a bad pointer */
-	} else {
-		if (freq.type == SCPI_NUM_DEF) {
-			freq.value = 1000;
-			freq.type = SCPI_NUM_NUMBER;
-			freq.unit = SCPI_UNIT_HERTZ;
-		}
-		if (freq.unit == SCPI_UNIT_NONE) {
-			freq.unit = SCPI_UNIT_HERTZ;
-		}
-		/* handle minimum, maximum, regular*/
-	}
-	if (!SCPI_ParamNumber(context, &ampl, false)) {
-		/* bad pointers */
-	} else {
-		if (ampl.type == SCPI_NUM_DEF) {
-			ampl.type = SCPI_NUM_NUMBER;
-			ampl.unit = SCPI_UNIT_VOLT;
-			ampl.value = 0.1; // 100 mV by default
-		}
-		if (ampl.type == SCPI_NUM_MIN) {
-			ampl.value = 0;
-		}
-		if (ampl.type == SCPI_NUM_MAX) {
-			ampl.value = FULL_SCALE;
-		}
-		if (ampl.unit == SCPI_UNIT_NONE) {
-			ampl.unit = SCPI_UNIT_VOLT;
-		}
-		/* handle minimum, maximum, */
-		/* TODO somehow work out how to handle Vrms units here ?*/
-	}
-	if (!SCPI_ParamNumber(context, &offset, false)) {
-		/* bad pointers */
-	} else {
-		if (offset.type == SCPI_NUM_DEF) {
-			offset.type = SCPI_NUM_NUMBER;
-			offset.unit = SCPI_UNIT_VOLT;
-			offset.value = FULL_SCALE / 2.0;
-		}
-		if (offset.type == SCPI_NUM_MIN) {
-			offset.value = 0;
-		}
-		if (offset.type == SCPI_NUM_MAX) {
-			offset.value = FULL_SCALE;
-		}
-		if (offset.unit == SCPI_UNIT_NONE) {
-			offset.unit = SCPI_UNIT_VOLT;
-		}
-	}
-#define FULL_DEBUG 1
-#if FULL_DEBUG
-	SCPI_NumberToStr(context, &freq, numbuf, sizeof (numbuf));
-	printf("setting output %d to sin wave freq: %s", output + 1, numbuf);
-	SCPI_NumberToStr(context, &ampl, numbuf, sizeof (numbuf));
-	printf("ampl: %s", numbuf);
-	SCPI_NumberToStr(context, &offset, numbuf, sizeof (numbuf));
-	printf("offset: %s", numbuf);
-#endif
+	dscpi_apply_params(context, &freq, &ampl, &offset);
 	funcgen_sin(output, freq.value, ampl.value, offset.value);
 	return SCPI_RES_OK;
 }
@@ -180,6 +192,26 @@ scpi_result_t dscpi_apply_sin1(scpi_t *context)
 scpi_result_t dscpi_apply_sin2(scpi_t *context)
 {
 	return dscpi_apply_sin_inner(context, 1);
+}
+
+static scpi_result_t dscpi_apply_user_inner(scpi_t *context, int output)
+{
+	scpi_number_t freq;
+	scpi_number_t ampl;
+	scpi_number_t offset;
+	dscpi_apply_params(context, &freq, &ampl, &offset);
+	funcgen_user(output, freq.value, ampl.value, offset.value);
+	return SCPI_RES_OK;
+}
+
+scpi_result_t dscpi_apply_user1(scpi_t *context)
+{
+	return dscpi_apply_user_inner(context, 0);
+}
+
+scpi_result_t dscpi_apply_user2(scpi_t *context)
+{
+	return dscpi_apply_user_inner(context, 1);
 }
 
 static const struct _output_mode output_modes[] = {
@@ -250,7 +282,7 @@ static scpi_result_t dscpi_data_dac_inner(scpi_t *context, int channel)
 		return SCPI_RES_ERR;
 	} else {
 		memcpy(fo->waveform, raw_arg, outlen);
-		fo->waveform_length = outlen / sizeof(fo->waveform[0]);
+		fo->waveform_length = outlen / sizeof (fo->waveform[0]);
 		return SCPI_RES_OK;
 	}
 }
@@ -269,7 +301,7 @@ scpi_result_t dscpi_data_dac2(scpi_t *context)
 static scpi_result_t dscpi_data_dacQ_inner(scpi_t *context, int channel)
 {
 	struct funcgen_output_t *fo = funcgen_getstate()->outputs[channel];
-        SCPI_ResultBinary(context, (const char *)fo->waveform, fo->waveform_length * sizeof(fo->waveform[0]));
+	SCPI_ResultBinary(context, (const char *) fo->waveform, fo->waveform_length * sizeof (fo->waveform[0]));
 	return SCPI_RES_OK;
 }
 

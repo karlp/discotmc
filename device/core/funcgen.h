@@ -55,6 +55,7 @@ extern "C" {
 	void funcgen_sin(int channel, float frequency, float ampl, float offset);
 	void funcgen_square(int channel, float frequency, float ampl, float offset);
 	void funcgen_triangle(int channel, float frequency, float ampl, float offset);
+	void funcgen_user(int channel, float frequency, float ampl, float offset);
 	void funcgen_output(int channel, bool enable);
 	struct funcgen_state_t * funcgen_getstate(void);
 
