@@ -24,7 +24,7 @@ OBJS += usb_tmc.o scpi_platform.o funcgen-plat.o
 CFLAGS += -std=c99 -ggdb3
 CFLAGS+=-I../core -I../../scpi-parser/libscpi/inc
 LDFLAGS+=-L../../scpi-parser/libscpi/dist/arm-none-eabi
-LDFLAGS+= --specs=nano.specs
+LDFLAGS+= --specs=nano.specs -u _printf_float
 LDLIBS+=-lscpi -lm
 
 VPATH += ../core
