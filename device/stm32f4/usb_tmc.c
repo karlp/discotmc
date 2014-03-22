@@ -247,13 +247,18 @@ static void tmc_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
 	
 }
 
+static void tmc_data_tx_cb(usbd_device *usbd_dev, uint8_t ep) {
+	/* Need to use this to keep feeding data if we haven't finished a transfer yet! */
+	printf("tx cb\n");
+	
+}
+
 static void tmc_set_config(usbd_device *usbd_dev, uint16_t wValue)
 {
 	(void) wValue;
 
-	usbd_ep_setup(usbd_dev, 0x01, USB_ENDPOINT_ATTR_BULK, 64,
-		tmc_data_rx_cb);
-	usbd_ep_setup(usbd_dev, 0x82, USB_ENDPOINT_ATTR_BULK, 64, NULL);
+	usbd_ep_setup(usbd_dev, 0x01, USB_ENDPOINT_ATTR_BULK, 64, tmc_data_rx_cb);
+	usbd_ep_setup(usbd_dev, 0x82, USB_ENDPOINT_ATTR_BULK, 64, tmc_data_tx_cb);
 
 	usbd_register_control_callback(usbd_dev,
 		USB_REQ_TYPE_CLASS |
