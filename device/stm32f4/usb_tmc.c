@@ -219,6 +219,7 @@ static void tmc_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
 		scpi_glue_input(&buf[sizeof(struct usb_tmc_bulk_header)],
 			bhin->command_specific.dev_dep_msg_out.transferSize,
 			true);
+		return;
 	case USB_TMC_MSGID_OUT_REQUEST_DEV_DEP_MSG_IN:
 		/* WILL need state machiens here too I guess :( */
 		printf("req_dev_dep_in for max %" PRIu32 " bytes, btag: %d\n",
