@@ -368,6 +368,7 @@ void hexdump(char* prefix, uint8_t *buf, uint16_t len)
 void scpi_glue_input(uint8_t *buf, uint16_t len, bool final)
 {
 	//hexdump("feeding to scpi", buf, len);
+	printf("scpi input %d bytes (%s)\n", len, final ? "final" : "partial");
 	SCPI_Input(&scpi_context, (char *) buf, len);
 	if (final) {
 		SCPI_Input(&scpi_context, NULL, 0);

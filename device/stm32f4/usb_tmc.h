@@ -42,7 +42,7 @@ BEGIN_DECLS
 void usb_tmc_init(usbd_device **usb_dev, const char *serial_number);
 void usb_tmc_setup_pre_arch(void);
 void usb_tmc_setup_post_arch(void);
-void tmc_glue_send_data(uint8_t *buf, size_t len);
+void tmc_glue_send_data(const uint8_t *buf, size_t len);
 
 END_DECLS
 

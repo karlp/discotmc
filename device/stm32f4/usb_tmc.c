@@ -23,6 +23,17 @@ uint8_t output_buffer[256];
 int output_buffer_idx = 0;
 usbd_device *tmc_dev;
 
+struct _usbtmc_transfer_state {
+	/* copy of it to help us decode */
+	struct usb_tmc_bulk_header bhdr;
+	bool in_progress;
+	int bytes_transferred; /* how many we've already sent/received of this transfer */
+	int bytes_total; /* how many we _need_ to send/receive this transfer */
+};
+
+struct _usbtmc_transfer_state transfer_state_in;
+struct _usbtmc_transfer_state transfer_state_queued;
+
 static const struct usb_device_descriptor dev = {
 	.bLength = USB_DT_DEVICE_SIZE,
 	.bDescriptorType = USB_DT_DEVICE,
@@ -57,7 +68,8 @@ static const struct usb_endpoint_descriptor data_endp[] = {
 		.bmAttributes = USB_ENDPOINT_ATTR_BULK,
 		.wMaxPacketSize = 64,
 		.bInterval = 1,
-	}};
+	}
+};
 
 
 static const struct usb_interface_descriptor tmc_iface[] = {
@@ -73,14 +85,16 @@ static const struct usb_interface_descriptor tmc_iface[] = {
 		.iInterface = 0,
 
 		.endpoint = data_endp,
-	}};
+	}
+};
 
 
 static const struct usb_interface ifaces[] = {
 	{
 		.num_altsetting = 1,
 		.altsetting = tmc_iface,
-	}};
+	}
+};
 
 static const struct usb_config_descriptor config = {
 	.bLength = USB_DT_CONFIGURATION_SIZE,
@@ -108,8 +122,10 @@ static const struct usb_tmc_get_capabilities_response capabilities = {
 	.USBTMC_status = USB_TMC_STATUS_SUCCESS,
 	.bcdUSBTMC = 0x0100,
 	.reserved0 = 0,
-	.reserved1 = {0},
-	.reserved_subclass = {0},
+	.reserved1 =
+	{0},
+	.reserved_subclass =
+	{0},
 	.interface_capabilities = USB_TMC_INTERFACE_CAPABILITY_INDICATOR_PULSE,
 	.device_capabilities = 0
 };
@@ -135,13 +151,49 @@ void usb_tmc_setup_post_arch(void)
  * recommended is on for > 500ms and < 1 sec.
  * We're hacking it a bit now with just a toggle each time you ask for it
  */
-static void usb_tmc_arch_handle_pulse(void) {
+static void usb_tmc_arch_handle_pulse(void)
+{
 	gpio_toggle(LED_PULSE_PORT, LED_PULSE_PIN);
 }
 
 void otg_fs_isr(void)
 {
 	usbd_poll(tmc_dev);
+}
+
+static
+int tmc_control_request_endpoint(usbd_device *usbd_dev,
+	struct usb_setup_data *req,
+	uint8_t **buf,
+	uint16_t *len,
+	void (**complete) (usbd_device *usbd_dev, struct usb_setup_data *req))
+{
+	switch (req->bRequest) {
+	case USB_TMC_REQ_INITIATE_ABORT_BULK_OUT:
+		printf("!! UNHANDLED - host req abort bulk out of bTag: %d\n", req->wValue & 0xff);
+		/* TODO - reset the input loading pipe - remember this is out from the host PoV
+		 * see section 4.2.1.2 of usbtmc
+		 */
+		return USBD_REQ_NOTSUPP;
+	case USB_TMC_REQ_CHECK_ABORT_BULK_OUT_STATUS:
+		printf("!! UNHANDLED - check abort bulk out status\n");
+		/* In theory we need to reply with how many of the bytes
+		 * we had read before we were requested to abort*/
+		return USBD_REQ_NOTSUPP;
+
+	case USB_TMC_REQ_INITIATE_ABORT_BULK_IN:
+		printf("!! UNHANDLED - host req abort bulk in of bTag: %d\n", req->wValue & 0xff);
+		/* TODO - reset the output loading pipe - remember this is in from the host PoV
+		 * see section 4.2.1.4 of usbtmc
+		 */
+		return USBD_REQ_NOTSUPP;
+	case USB_TMC_REQ_CHECK_ABORT_BULK_IN_STATUS:
+		printf("!! UNHANDLED - check abort bulk IN status\n");
+		/* In theory we need to reply with how many of the bytes
+		 * we had sent before we were requested to abort*/
+		return USBD_REQ_NOTSUPP;
+	}
+	return USBD_REQ_NOTSUPP;
 }
 
 /**
@@ -155,7 +207,7 @@ void otg_fs_isr(void)
  * @return 
  */
 static
-int tmc_control_request(usbd_device *usbd_dev,
+int tmc_control_request_interface(usbd_device *usbd_dev,
 	struct usb_setup_data *req,
 	uint8_t **buf,
 	uint16_t *len,
@@ -167,7 +219,6 @@ int tmc_control_request(usbd_device *usbd_dev,
 	(void) len;
 
 	switch (req->bRequest) {
-		
 	case USB_REQ_CLEAR_FEATURE:
 		if (req->wIndex != 0) {
 			if (req->wValue == USB_FEAT_ENDPOINT_HALT) {
@@ -177,16 +228,27 @@ int tmc_control_request(usbd_device *usbd_dev,
 				return USBD_REQ_NEXT_CALLBACK;
 			}
 		}
-		//
+		return USBD_REQ_NOTSUPP;
+
+	case USB_TMC_REQ_INITIATE_CLEAR:
+		printf("?? MAYBE HANDLED initialte clear\n");
+		*buf[0] = USB_TMC_STATUS_SUCCESS;
+		return USBD_REQ_HANDLED;
+	case USB_TMC_REQ_CHECK_CLEAR_STATUS:
+		printf("!! MAYBE? check clear status?\n");
+		*buf[0] = USB_TMC_STATUS_SUCCESS;
+		*buf[1] = 0;
+		return USBD_REQ_HANDLED;
 
 	case USB_TMC_REQ_GET_CAPABILITIES:
-		memcpy(*buf, &capabilities, sizeof(capabilities));
+		memcpy(*buf, &capabilities, sizeof (capabilities));
 		return USBD_REQ_HANDLED;
+
 	case USB_TMC_REQ_INDICATOR_PULSE:
 		usb_tmc_arch_handle_pulse();
 		return USBD_REQ_HANDLED;
 	}
-	return 0;
+	return USBD_REQ_NOTSUPP;
 }
 
 static void tmc_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
@@ -195,8 +257,29 @@ static void tmc_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
 	(void) ep;
 
 	int len = usbd_ep_read_packet(usbd_dev, 0x01, buf, 64);
+	if (transfer_state_in.in_progress) {
+		printf("TIP\n");
+		switch (transfer_state_in.bhdr.MsgID) {
+		case USB_TMC_MSGID_OUT_DEV_DEP_MSG_OUT:
+			/* just continue feeding data to scpi */
+			transfer_state_in.bytes_transferred += len;
+			bool completed = transfer_state_in.bytes_transferred >= transfer_state_in.bytes_total;
+			scpi_glue_input(buf, len, completed);
+			if (completed) {
+				transfer_state_in.in_progress = false;
+			}
+			break;
+		default:
+			printf("no support for multiframe other types!\n");
+			break;
+		}
+	}
+	if (transfer_state_queued.in_progress) {
+		printf("TIP ququed\n");
+		/* umm?*/
+	}
 	/* TODO We actually need a state machine to handle >= than single transfer*/
-	struct usb_tmc_bulk_header *bhin = (struct usb_tmc_bulk_header *)buf;
+	struct usb_tmc_bulk_header *bhin = (struct usb_tmc_bulk_header *) buf;
 	switch (bhin->MsgID) {
 	case USB_TMC_MSGID_OUT_DEV_DEP_MSG_OUT:
 		printf("dev dep out btag: %d\n", bhin->bTag);
@@ -208,34 +291,66 @@ static void tmc_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
 		}
 #endif
 		/* Could also assert that reserved is zero, but let's forgive things */
-		if (bhin->command_specific.dev_dep_msg_out.transferSize > 64) {
-			printf("transfer > 1 packet! (UNHANDLED)\n");
-			return;
-		}
+		transfer_state_in.bytes_total = bhin->command_specific.dev_dep_msg_out.transferSize;
+		transfer_state_in.bytes_transferred = 0;
+		int data_bytes = len - sizeof (struct usb_tmc_bulk_header);
+		transfer_state_in.bytes_transferred += data_bytes;
+
+		scpi_glue_input(&buf[sizeof (struct usb_tmc_bulk_header)],
+			data_bytes, !transfer_state_in.in_progress);
+		if (transfer_state_in.bytes_total > 64) {
+			transfer_state_in.in_progress = true;
+			memcpy(&transfer_state_in.bhdr, bhin, sizeof(transfer_state_in.bhdr));
+		} /* else we're actually done. */
+
+#if 0
+		/*
+		 * This is if the usbtmc command frame (higher level) is spread over multiple _transfers_
+		 * we simply don't care about that, we just feed all data to scpi parser, as it arrives.
+		 * (well, I _could_ use the EOM marker to send "finished" to scpi, but that feels unreliable)
+		 */
 		if (bhin->command_specific.dev_dep_msg_out.bmTransferAttributes & USB_TMC_BULK_HEADER_BMTRANSFER_ATTRIB_EOM) {
 			/* exit state machine here */
 			printf("single frame packet :)\n");
 		}
-		scpi_glue_input(&buf[sizeof(struct usb_tmc_bulk_header)],
-			bhin->command_specific.dev_dep_msg_out.transferSize,
-			true);
+#endif
 		return;
+
 	case USB_TMC_MSGID_OUT_REQUEST_DEV_DEP_MSG_IN:
+		/* this is an OUT, but it means it's going to start sending us IN tokens...*/
 		/* WILL need state machiens here too I guess :( */
 		printf("req_dev_dep_in for max %" PRIu32 " bytes, btag: %d\n",
 			bhin->command_specific.req_dev_dep_msg_in.transferSize,
 			bhin->bTag);
 		if (bhin->command_specific.req_dev_dep_msg_in.bmTransferAttributes & USB_TMC_BULK_HEADER_BMTRANSFER_ATTRIB_TERMCHAR) {
 			printf("FAIL! requested term char!\n");
-			return;  /* TODO reply error? */
+			return; /* TODO reply error? */
 		}
+		
+		/* XXX - probably need to do some locking shit or something... ?*/
+		/* no, just do it from the queued packet... */
 		bhin->MsgID = USB_TMC_MSGID_IN_DEV_DEP_MSG_IN;
-		bhin->command_specific.dev_dep_msg_in.transferSize = output_buffer_idx;
+		bhin->command_specific.dev_dep_msg_in.transferSize = transfer_state_queued.bytes_total;
 		/* only support short stuff now! */
+		// TODO
+		/*
+		 * Unlike in input side where we don't care, we should set this when a scpi command has _finished_
+		 * not just when a frame is full or something.  This should be when scpi writes a \r\n?
+		 */
 		bhin->command_specific.dev_dep_msg_in.bmTransferAttributes = USB_TMC_BULK_HEADER_BMTRANSFER_ATTRIB_EOM;
-		memcpy(&buf[sizeof(struct usb_tmc_bulk_header) + 1], output_buffer, output_buffer_idx);
-		usbd_ep_write_packet(tmc_dev, 0x82, buf, sizeof(struct usb_tmc_bulk_header) + output_buffer_idx);
-		output_buffer_idx = 0;
+		/* remember, bhin is a pointer on top of buf, which is how we left btag and so on in place */
+		int bytes_max_now = 64 - sizeof (struct usb_tmc_bulk_header);
+		int bytes_now = MIN(bytes_max_now, transfer_state_queued.bytes_total);
+		printf("depi1: total:%d, now:%d\n", transfer_state_queued.bytes_total, bytes_now);
+		transfer_state_queued.bytes_transferred = bytes_now;
+		if (transfer_state_queued.bytes_transferred >= transfer_state_queued.bytes_total) {
+			output_buffer_idx = 0;			
+		} else {
+			transfer_state_queued.in_progress = true;
+		}
+		
+		memcpy(&buf[sizeof (struct usb_tmc_bulk_header) + 1], output_buffer, bytes_now);		
+		usbd_ep_write_packet(tmc_dev, 0x82, buf, sizeof (struct usb_tmc_bulk_header) + bytes_now + (bytes_now % 4));
 		return;
 	case USB_TMC_MSGID_OUT_VENDOR_SPECIFIC_OUT:
 		printf("vendor_out (UNHANDLED)\n");
@@ -244,13 +359,30 @@ static void tmc_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
 		printf("req_vendor_in (UNHANDLED)\n");
 		return;
 	}
-	
+
 }
 
-static void tmc_data_tx_cb(usbd_device *usbd_dev, uint8_t ep) {
+static void tmc_data_tx_cb(usbd_device *usbd_dev, uint8_t ep)
+{
 	/* Need to use this to keep feeding data if we haven't finished a transfer yet! */
-	printf("tx cb\n");
-	
+	printf("tx cb on ep: %d\n", ep);
+	/* if ep is our output ep, 0x82, and our queued data is still not finished, keep writing it */
+	if (ep != 0x2) {
+		return;
+	}
+	if (transfer_state_queued.in_progress) {
+		int bytes_left = transfer_state_queued.bytes_total - transfer_state_queued.bytes_transferred;
+		int bytes_now = MIN(64, bytes_left);
+		usbd_ep_write_packet(tmc_dev, 0x82, &output_buffer[transfer_state_queued.bytes_transferred], bytes_now);
+		transfer_state_queued.bytes_transferred += bytes_now;
+		if (transfer_state_queued.bytes_transferred >= transfer_state_queued.bytes_total) {
+			transfer_state_queued.in_progress = false;
+			output_buffer_idx = 0;
+			transfer_state_queued.bytes_total = 0;
+			transfer_state_queued.bytes_transferred = 0;
+		}
+	}
+
 }
 
 static void tmc_set_config(usbd_device *usbd_dev, uint16_t wValue)
@@ -261,25 +393,47 @@ static void tmc_set_config(usbd_device *usbd_dev, uint16_t wValue)
 	usbd_ep_setup(usbd_dev, 0x82, USB_ENDPOINT_ATTR_BULK, 64, tmc_data_tx_cb);
 
 	usbd_register_control_callback(usbd_dev,
-		USB_REQ_TYPE_CLASS |
-		USB_REQ_TYPE_INTERFACE,
-		USB_REQ_TYPE_TYPE |
-		USB_REQ_TYPE_RECIPIENT,
-		tmc_control_request);
+		USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE,
+		USB_REQ_TYPE_TYPE | USB_REQ_TYPE_RECIPIENT,
+		tmc_control_request_interface);
+	usbd_register_control_callback(usbd_dev,
+		USB_REQ_TYPE_CLASS | USB_REQ_TYPE_ENDPOINT,
+		USB_REQ_TYPE_TYPE | USB_REQ_TYPE_RECIPIENT,
+		tmc_control_request_endpoint);
 }
 
-void tmc_glue_send_data(uint8_t *buf, size_t len) {
-	memcpy(&output_buffer[output_buffer_idx], buf, len);
-	if (output_buffer_idx + len > sizeof(output_buffer)) {
-		printf("OOPS output buffer overflow!\n");
+/* This can get called multiple times before an IN packet is received */
+void tmc_glue_send_data(const uint8_t *buf, size_t len)
+{
+	
+	/* If a transfer is in procecess, we can't dick around with it's figures */
+	while (transfer_state_queued.in_progress) {
+		// yield here would be nice?
 	}
-	output_buffer_idx += len;
+	printf("%s: ok, nothing in progress...\n", __func__);
+	/* Ok, nothing in _progress_ we can start queueing data */
+	size_t available = sizeof (output_buffer) - output_buffer_idx;
+	if (available >= len) {
+		memcpy(&output_buffer[output_buffer_idx], buf, len);
+		output_buffer_idx += len;
+		transfer_state_queued.bytes_total += len;
+	} else {
+		printf("OOPS output buffer overflow, need to block and respin...\n");
+		/* can I recuse here? and sneakily send in a modified pointer?*/
+	}
+	
+	/* when _this_ command returns, it must have marked EOM on the last frame...
+	 * should use scpi_flush_data callback to do so, that's what it does...
+	 */
+	
 }
 
 void usb_tmc_init(usbd_device **usbd_dev, const char *serial_number)
 {
 	strcpy(_our_serial_number, serial_number);
 	usb_tmc_setup_pre_arch();
+	memset(&transfer_state_in, 0, sizeof(transfer_state_in));
+	memset(&transfer_state_queued, 0, sizeof(transfer_state_queued));
 
 	// 4 == ARRAY_LENGTH(usb_strings)
 	*usbd_dev = usbd_init(&otgfs_usb_driver, &dev, &config, usb_strings, 4,

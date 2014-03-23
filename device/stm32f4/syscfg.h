@@ -20,11 +20,7 @@
 #ifndef SYSCFG_H
 #define	SYSCFG_H
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
-
-/* TODO: should really make a stm32f4discovery.h file... */
+	/* TODO: should really make a stm32f4discovery.h file... */
 
 #define LED_RX_PORT	GPIOD
 #define LED_RX_PIN	GPIO15  /* Blue, but you won't see this one much */
@@ -39,9 +35,14 @@ extern "C" {
 #define USART_CONSOLE_PINS_PORT GPIOA
 #define USART_CONSOLE_PINS_PINS (GPIO2 | GPIO3)
 
-#ifdef	__cplusplus
-}
+	/* Hope everyone used the same defn ;) */
+#ifndef MIN
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
+
+BEGIN_DECLS
+
+END_DECLS
 
 #endif	/* SYSCFG_H */
 

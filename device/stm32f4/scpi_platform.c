@@ -7,7 +7,8 @@ size_t scpi_impl_write(scpi_t *context, const char *data, size_t len)
 {
 	(void) context;
 	//hexdump("scpi reply", (uint8_t *) data, len);
-	tmc_glue_send_data((uint8_t *) data, len);
+	printf("SCPI write %d bytes\n", len);
+	tmc_glue_send_data((const uint8_t*)data, len);
 	return len;
 }
 
