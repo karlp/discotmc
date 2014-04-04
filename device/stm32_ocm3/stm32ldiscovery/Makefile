@@ -20,16 +20,22 @@ BINARY = main
 OBJS += dscpi.o funcgen.o
 # platform support
 OBJS += usb_tmc.o scpi_platform.o funcgen-plat.o
+# Arch support
+OBJS+=arch.o funcgen-plat-arch.o
 
 CFLAGS += -std=c99 -ggdb3
-CFLAGS+=-I../core -I../../scpi-parser/libscpi/inc
-LDFLAGS+=-L../../scpi-parser/libscpi/dist/arm-none-eabi
+CFLAGS+=-I../../core -I../../../scpi-parser/libscpi/inc
+CFLAGS+=-I.. -I.
+# FIXME - this is totally going to fail!
+LDFLAGS+=-L../../../scpi-parser/libscpi/dist/arm-none-eabi
 LDFLAGS+= --specs=nano.specs -u _printf_float
 LDLIBS+=-lscpi -lm
 
-VPATH += ../core
+VPATH += ../../core
+VPATH += ..
 
-LDSCRIPT = stm32f4-discovery.ld
+OPENCM3_DIR=../../../libopencm3
+LDSCRIPT= $(OPENCM3_DIR)/lib/stm32/l1/stm32l15xxb.ld
 
 include Makefile.include
 

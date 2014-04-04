@@ -117,8 +117,9 @@ static const struct usb_tmc_get_capabilities_response capabilities = {
 void usb_tmc_setup_pre_arch(void)
 {
 	rcc_periph_clock_enable(RCC_GPIOA);
-	rcc_periph_clock_enable(RCC_OTGFS);
+	rcc_periph_clock_enable(USB_RCC);
 
+	/* Not sure if we need 9 for ID or even if we need this at all */
 	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE,
 		GPIO9 | GPIO11 | GPIO12);
 	gpio_set_af(GPIOA, GPIO_AF10, GPIO9 | GPIO11 | GPIO12);
@@ -127,7 +128,7 @@ void usb_tmc_setup_pre_arch(void)
 void usb_tmc_setup_post_arch(void)
 {
 	/* Better enable interrupts */
-	nvic_enable_irq(NVIC_OTG_FS_IRQ);
+	nvic_enable_irq(USB_ISR_NVIC);
 }
 
 /*
@@ -139,7 +140,7 @@ static void usb_tmc_arch_handle_pulse(void) {
 	gpio_toggle(LED_PULSE_PORT, LED_PULSE_PIN);
 }
 
-void otg_fs_isr(void)
+void USB_ISR(void)
 {
 	usbd_poll(tmc_dev);
 }
@@ -276,7 +277,7 @@ void usb_tmc_init(usbd_device **usbd_dev, const char *serial_number)
 	usb_tmc_setup_pre_arch();
 
 	// 4 == ARRAY_LENGTH(usb_strings)
-	*usbd_dev = usbd_init(&otgfs_usb_driver, &dev, &config, usb_strings, 4,
+	*usbd_dev = usbd_init(&USB_DRIVER, &dev, &config, usb_strings, 4,
 		usbd_control_buffer, sizeof (usbd_control_buffer));
 	tmc_dev = *usbd_dev;
 	usbd_register_set_config_callback(tmc_dev, tmc_set_config);

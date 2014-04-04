@@ -38,7 +38,6 @@ void usart_init(int baud)
 {
 	rcc_periph_clock_enable(USART_CONSOLE_RCC);
 	rcc_periph_clock_enable(USART_CONSOLE_PINS_RCC);
-	rcc_peripheral_enable_clock(&RCC_AHB1ENR, RCC_AHB1ENR_IOPAEN);
 
 	/* Setup GPIO pins for USART2 transmit. */
 	gpio_mode_setup(USART_CONSOLE_PINS_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, USART_CONSOLE_PINS_PINS);
@@ -102,6 +101,7 @@ static void load_serial_number(char *snum) {
 		}
 	}
 	snum[9] = '\0';
+	rcc_periph_clock_disable(RCC_CRC);
 }
 
 
@@ -110,7 +110,7 @@ int main(void)
 {
 	usbd_device *usbd_dev;
 
-	rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_168MHZ]);
+	clock_arch_setup();
 	/* Leds are on port D */
 	rcc_periph_clock_enable(RCC_GPIOD);
 	gpio_mode_setup(LED_RX_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,

@@ -1,6 +1,4 @@
 /*
- * This file is part of the libopencm3 project.
- *
  * Copyright (C) 2014 Karl Palsson <karlp@tweak.net.au>
  *
  * This library is free software: you can redistribute it and/or modify
@@ -20,18 +18,14 @@
 #ifndef SYSCFG_H
 #define	SYSCFG_H
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
 
-/* TODO: should really make a stm32f4discovery.h file... */
-
-#define LED_RX_PORT	GPIOD
-#define LED_RX_PIN	GPIO15  /* Blue, but you won't see this one much */
-#define LED_TX_PORT	GPIOD
-#define LED_TX_PIN	GPIO13  /* orange */
-#define LED_PULSE_PORT	GPIOD
-#define LED_PULSE_PIN	GPIO14  /* red */
+/* only two leds on 32l board;) */
+#define LED_RX_PORT	GPIOB
+#define LED_RX_PIN	GPIO7 /* green */
+#define LED_TX_PORT	GPIOB
+#define LED_TX_PIN	GPIO7
+#define LED_PULSE_PORT	GPIOB
+#define LED_PULSE_PIN	GPIO6 /* blue */
 
 #define USART_CONSOLE USART2
 #define USART_CONSOLE_RCC	RCC_USART2
@@ -39,9 +33,27 @@ extern "C" {
 #define USART_CONSOLE_PINS_PORT GPIOA
 #define USART_CONSOLE_PINS_PINS (GPIO2 | GPIO3)
 
-#ifdef	__cplusplus
-}
+#define TIMER_DAC1_ISR		tim6_isr
+#define TIMER_DAC1_NVIC		NVIC_TIM6_IRQ
+
+#define USB_ISR         usb_lp_isr
+#define USB_ISR_NVIC    NVIC_USB_LP_IRQ
+#define USB_RCC		RCC_USB /* hoho */
+#define USB_DRIVER      stm32f103_usb_driver
+
+
+
+
+	/* Hope everyone used the same defn ;) */
+#ifndef MIN
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
+
+BEGIN_DECLS
+
+void clock_arch_setup(void);
+
+END_DECLS
 
 #endif	/* SYSCFG_H */
 

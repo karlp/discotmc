@@ -1,0 +1,4 @@
+
+stm32l still needs all the dma stuff fixed up and separated from f4
+f4 vs l1 is goign to fail withthe scpi lib
+needs to merge / plan how the bigger transfer work will fit in?
