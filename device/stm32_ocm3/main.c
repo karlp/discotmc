@@ -124,6 +124,8 @@ int main(void)
 	scpi_init_platform(our_serial);
 	funcgen_plat_init();
 	printf("Disco non stop TMC!\n");
+	funcgen_sin(0, 1000, 1, 0.5);
+	funcgen_sin(1, 2000, 0.75, 0.25);
 
 	while (1) {
 		//__WFI();
