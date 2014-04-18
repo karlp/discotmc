@@ -8,6 +8,7 @@ Current status:
   (granularity is terrible above ~4kHz, but that's fixable)
 * Load arbitrary data and output. (lots of bugs in data bigger than usb frames)
 * still bugs in usb comms, need to reset the board far too often.
+* Some preliminary support for the L1...
 
 getting started....
 
@@ -20,8 +21,9 @@ Device firmware portion
 ```
 make -C libopencm3
 make -C scpi-parser/libscpi
-make -C device/stm32f4
-make -C device/stm32f4 flash  # assumes openocd installed and operational
+make -C device/stm32_ocm3/stm32f4discovery
+(assuming openocd installed and operational)
+make -C device/stm32_ocm3/stm32f4discovery flash
 ```
 
 See device/native-tcp-server for a host build of the core functionality. (No
