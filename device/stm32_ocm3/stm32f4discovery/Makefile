@@ -26,16 +26,21 @@ OBJS += arch.o funcgen-plat-arch.o
 CFLAGS += -std=c99 -ggdb3
 CFLAGS+=-I../../core -I../../../scpi-parser/libscpi/inc
 CFLAGS+=-I.. -I.
-# FIXME - this is totally going to bust...
-LDFLAGS+=-L../../../scpi-parser/libscpi/dist/arm-none-eabi
+LDFLAGS+=-Lbuild/dist
 LDFLAGS+= --specs=nano.specs -u _printf_float
 LDLIBS+=-lscpi -lm
 
 VPATH += ../../core
 VPATH += ..
 
+OPENCM3_DIR=../../../libopencm3
 LDSCRIPT=stm32f4-discovery.ld
 
-OPENCM3_DIR=../../../libopencm3
+default: libscpi all
+
+# This is gross
+libscpi:
+	PLAT_DIR=$(shell pwd)/build ARCH_FLAGS="-mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4" PREFIX=arm-none-eabi- make -C /home/karlp/src/discotmc/scpi-parser/libscpi
+
 include Makefile.include
 
