@@ -26,7 +26,7 @@ OBJS += arch.o funcgen-plat-arch.o
 CFLAGS += -std=c99 -ggdb3
 CFLAGS+=-I../../core -I../../../scpi-parser/libscpi/inc
 CFLAGS+=-I.. -I.
-LDFLAGS+=-Lbuild/dist
+LDFLAGS+=-L../../../scpi-parser/libscpi/arm-none-eabi/dist/
 LDFLAGS+= --specs=nano.specs -u _printf_float
 LDLIBS+=-lscpi -lm
 
